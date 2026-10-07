@@ -698,6 +698,8 @@ body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.
   .bouton, .dialog .bouton { min-height: 3.5rem; }
   .bouton.bouton-reglage { min-height: 3.5rem; font-size: 1rem; padding: 0.4rem 1rem; }
   .ligne-verif { flex-direction: column; }
+  /* En colonne, la base flex s'applique à la hauteur : on la neutralise */
+  .ligne-verif input { flex: 0 1 auto; width: 100%; box-sizing: border-box; }
   .ligne-verif .bouton { width: 100%; }
 
   /* Barre toujours visible en bas : « sticky » la colle au bas de l'écran
@@ -729,12 +731,24 @@ body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.
   /* Le bouton d'aide de bureau et la note discrète ne sont pas sur téléphone */
   .pied > .bouton-aide, .pied > .bandeau { display: none; }
 
-  /* Dialogs adaptés au téléphone : pleine largeur, lisibles au pouce */
-  .dialog { width: 94vw; max-height: 88dvh; padding: 1.2rem; }
-  .dialog-ajout { width: 94vw; }
+  /* Dialogs en feuille plein écran : pas de fenêtre flottante sur téléphone */
+  .dialog {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    box-sizing: border-box;
+    padding: calc(0.8rem + env(safe-area-inset-top)) calc(1rem + env(safe-area-inset-right))
+             calc(1.2rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left));
+  }
   .catalogue-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .icones-grille { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .aide-telephone { width: 100%; }
+  .aide-telephone { width: 100%; box-sizing: border-box; }
   .panneau-tech { padding: 0.5rem; }
 }
 
