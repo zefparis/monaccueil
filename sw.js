@@ -5,7 +5,7 @@
    officiels s'ouvrent dans un nouvel onglet, hors de la portée du SW).
    Incrémentez VERSION à chaque mise à jour des fichiers.
    ===================================================================== */
-var VERSION = 'monaccueil-v2';
+var VERSION = 'monaccueil-v3';
 var FICHIERS = [
   './',
   './index.html',
@@ -19,7 +19,8 @@ var FICHIERS = [
   './icons/impots.svg', './icons/sante.svg', './icons/famille.svg', './icons/retraite.svg',
   './icons/administration.svg', './icons/medecin.svg', './icons/courrier.svg', './icons/banque.svg',
   './icons/mails.svg', './icons/photos.svg', './icons/meteo.svg', './icons/aide.svg',
-  './icons/cle.svg', './icons/assistance.svg', './icons/telephone.svg', './icons/bouclier.svg', './icons/app.svg'
+  './icons/cle.svg', './icons/assistance.svg', './icons/telephone.svg', './icons/bouclier.svg', './icons/app.svg',
+  './icons/mon-accueil-192.png', './icons/mon-accueil-512.png'
 ];
 
 self.addEventListener('install', function (ev) {

@@ -1,1 +1,9 @@
 workspace.code-workspace
+
+# Données clients : ne jamais mettre en ligne (le dépôt sert une démo)
+clients/
+config.client*.json
+sauvegardes/
+
+# Exports de journaux d'intervention (contiennent des dates/notes)
+*.csv

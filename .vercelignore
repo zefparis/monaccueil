@@ -1,0 +1,23 @@
+# Fichiers exclus du déploiement Vercel : le site déployé ne contient que
+# ce dont la page a besoin (html, css, js, icons/*.svg et *.png, manifest,
+# sw.js, config.json, config.js, robots.txt).
+
+# Outils de développement et tests (jamais servis)
+outils/
+
+# Kit de test pilote (documentation interne)
+docs/
+
+# Scripts Windows d'installation (poste client, pas le site)
+*.bat
+
+# Documentation
+*.md
+
+# Fichiers locaux de l'éditeur / d'environnement
+workspace.code-workspace
+.gitignore
+.vercelignore
+
+# Icônes Windows des raccourcis Bureau (inutiles sur le web)
+icons/*.ico

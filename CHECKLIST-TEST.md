@@ -147,3 +147,25 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 - [ ] Le client a fait **seul** : ouvrir le PC → cliquer une tuile → revenir →
       cliquer « J'ai besoin d'aide » → fermer. Sans aide, en moins de 5 secondes
       pour comprendre quoi faire.
+
+## K. Version hébergée (Vercel)
+
+À vérifier **après** le premier vrai déploiement :
+
+- [ ] L'URL `https://…vercel.app` ouvre la page et les tuiles fonctionnent.
+- [ ] Les en-têtes arrivent : dans les outils développeur → Réseau, vérifier
+      `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Robots-Tag: noindex`.
+- [ ] `robots.txt` répond `Disallow: /` ; les URL de prévisualisation sont
+      protégées (Deployment Protection activée).
+- [ ] L'installation PWA est proposée (Chrome : icône « Installer » dans la
+      barre d'adresse) ; l'app installée s'ouvre en plein écran avec l'icône
+      maison.
+- [ ] Hors ligne : désactiver le réseau → la page déjà visitée s'affiche encore.
+- [ ] Mise à jour : modifier `config.json` + incrémenter `VERSION` dans `sw.js`,
+      pousser → le changement apparaît après rechargement (le service worker se
+      met à jour).
+- [ ] Bascule file:// → https d'un poste : la configuration et le journal ont
+      été exportés AVANT (les stockages sont séparés).
+- [ ] Le mode technicien (appui long 3 s + PIN `1234`) ne sert que de
+      démonstration : tout le monde peut l'ouvrir, ne rien y stocker de réel.
+- [ ] Même contrôle **dans Edge et Firefox**.

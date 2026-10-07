@@ -28,4 +28,21 @@ d.line([(64, 196), (136, 196)], fill="white", width=W)
 d.rounded_rectangle((176, 120, 236, 216), radius=14, outline="white", width=W)
 d.line([(198, 200), (214, 200)], fill="white", width=8)
 im.save(racine / "aide-distance.ico", sizes=[(256, 256), (48, 48), (32, 32), (16, 16)])
-print("icônes .ico générées")
+
+# Icônes PWA : la maison de mon-accueil en PNG (192 et 512 px), même dessin qu'au-dessus.
+# Nécessaires à l'installation de la page comme application (manifest.webmanifest).
+def maison(taille):
+    k = taille / S
+    im = Image.new("RGBA", (taille, taille), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, taille - 1, taille - 1), radius=int(48 * k), fill="#1d4ed8")
+    w = int(W * k)
+    d.line([(56 * k, 128 * k), (128 * k, 64 * k), (200 * k, 128 * k)], fill="white", width=w, joint="curve")
+    d.line([(76 * k, 120 * k), (76 * k, 192 * k), (180 * k, 192 * k), (180 * k, 120 * k)], fill="white", width=w, joint="curve")
+    d.rectangle((112 * k, 152 * k, 144 * k, 192 * k), outline="white", width=max(2, w // 2))
+    return im
+
+for taille in (192, 512):
+    maison(taille).save(racine / f"mon-accueil-{taille}.png")
+
+print("icônes .ico et .png générées")

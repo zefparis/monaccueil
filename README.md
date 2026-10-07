@@ -146,6 +146,14 @@ valeurs de `config.js` sont utilisées.
 
 Rien n'indique ce geste à l'écran : il est introuvable par hasard.
 
+> ⚠️ **Ce que le PIN protège — et ne protège pas.** Le PIN empêche une **fausse
+> manipulation** (la personne âgée qui clique au hasard, un enfant qui joue avec
+> l'écran). Il ne protège **pas contre un attaquant** : le code par défaut `1234`
+> figure dans ce README, et le hash `pinHash` est servi publiquement — quiconque
+> lit la configuration peut en deviner la valeur par force brute (4 chiffres).
+> Sur une instance hébergée (§ 10), considérez le mode technicien comme une
+> fonction de **démonstration**, pas comme une barrière de sécurité.
+
 Le panneau a deux onglets : **Configuration** (ci-dessous) et **Journal des
 interventions** (§ 4 bis).
 
@@ -377,3 +385,56 @@ rafraîchissement du cache hors ligne.
   (injection de formule) et l'import rejette tout fichier hors format.
 - L'aide à distance n'est jamais embarquée dans l'app : un raccourci Bureau lance un
   logiciel séparé, et seul le client peut ouvrir et accepter une session.
+- Le PIN du mode technicien est un garde-fou d'usage, pas un secret : voir § 4.
+
+## 10. Version hébergée (Vercel)
+
+Le site peut être hébergé en https — par exemple chez Vercel — pour servir de
+**démonstration** ou d'accueil de dépannage distant. Le dépôt ne contient qu'une
+configuration générique : prénom « Jeanne », technicien « Benji », numéro
+fictif, aucune donnée client.
+
+### Fichiers ajoutés pour l'hébergement
+
+| Fichier | Rôle |
+|---|---|
+| `vercel.json` | En-têtes HTTP de sécurité (CSP `frame-ancestors 'none'`, `X-Frame-Options`, `nosniff`, `Permissions-Policy`, `noindex`…) et règles de cache |
+| `.vercelignore` | N'envoie sur Vercel que ce dont la page a besoin (ni `outils/`, ni `docs/`, ni les `.bat`, ni les `.md`) |
+| `robots.txt` | Interdit l'indexation (instance de démonstration) |
+
+### Connexion du dépôt (à faire dans l'interface Vercel)
+
+1. Sur vercel.com : **Add New → Project → Import Git Repository**, choisissez ce
+   dépôt GitHub.
+2. **Framework preset : Other** — il n'y a rien à construire.
+3. **Build command : vide**, **output directory : la racine** (par défaut).
+   Les fichiers sont servis tels quels.
+4. Deploy : le site est en ligne avec les en-têtes de `vercel.json`.
+5. **Protection** : dans *Settings → Deployment Protection*, activez la
+   protection des déploiements de prévisualisation (les URL `*-git-*.vercel.app`
+   ne doivent pas être publiques).
+6. Domaine personnalisé facultatif : *Settings → Domains*.
+
+### Mettre à jour un lien
+
+Modifiez `config.json` (ou le mode technicien → exporter), committez et poussez :
+Vercel redéploie automatiquement. `config.json` est servi en `no-cache` et relu
+à chaque chargement : un lien corrigé arrive immédiatement.
+
+### ⚠️ Attention au stockage navigateur
+
+Le stockage de `file:///…/index.html` et celui de `https://votre-site.vercel.app`
+sont **deux navigateurs-storage séparés** : configuration, réglages d'affichage,
+compteurs et journal enregistrés chez le client **ne se retrouveront pas** sur la
+version hébergée, et inversement. Avant de basculer un poste de l'un à l'autre :
+
+1. Exportez la configuration (mode technicien → onglet Configuration →
+   **Exporter**), gardez les deux fichiers.
+2. Exportez le journal (onglet Journal → **Exporter le journal**).
+
+### ⚠️ Le mode technicien en version hébergée
+
+Le PIN et son hash sont publics (voir § 4) : sur l'instance hébergée le mode
+technicien n'est là que pour la démonstration. Si vous préférez qu'aucun poste
+ne puisse l'ouvrir, c'est une option simple à ajouter (une clé de configuration
+qui désactive l'appui long) — demandez-la avant de publier.
