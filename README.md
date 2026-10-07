@@ -104,6 +104,10 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   administration.svg, medecin.svg, courrier.svg, banque.svg, mails.svg, photos.svg,
   meteo.svg, cle.svg, aide.svg, telephone.svg, bouclier.svg`.
 - `couleur` : code hexadécimal à 6 chiffres. Choisissez des couleurs foncées.
+- `modeTechnicien` : `true` par défaut (absent = actif). `false` désactive
+  totalement le mode technicien : l'appui long sur le titre ne fait rien, aucun
+  panneau n'est construit, rien ne le laisse deviner. Mettez `false` sur une
+  instance **publique de démonstration**, `true` chez un vrai client (§ 10).
 - `domainesOfficiels` : liste de domaines « connus ». Toute URL hors liste déclenche
   un avertissement en mode technicien (elle reste autorisée). Ajoutez-y la banque
   et la messagerie du client. **C'est aussi la liste de référence de la tuile
@@ -173,6 +177,9 @@ interventions** (§ 4 bis).
 - **Exporter la configuration** : télécharge `config.json` **et** `config.js`.
   Copiez les deux dans `C:\MonAccueil` (remplacez les anciens). Ainsi la
   configuration survit à un nettoyage du navigateur ou à une réinstallation.
+- **Sauvegarde de cette configuration** : télécharge uniquement `config.json`
+  tel qu'appliqué, avec le rappel de le ranger dans le dossier MonAccueil du
+  client.
 - **Importer une configuration** : charge un `config.json` (ou `config.js`).
 - **Revenir au fichier d'origine** : oublie les modifications locales et relit les
   fichiers du dossier.
@@ -401,6 +408,7 @@ fictif, aucune donnée client.
 | `vercel.json` | En-têtes HTTP de sécurité (CSP `frame-ancestors 'none'`, `X-Frame-Options`, `nosniff`, `Permissions-Policy`, `noindex`…) et règles de cache |
 | `.vercelignore` | N'envoie sur Vercel que ce dont la page a besoin (ni `outils/`, ni `docs/`, ni les `.bat`, ni les `.md`) |
 | `robots.txt` | Interdit l'indexation (instance de démonstration) |
+| `installer.html` (+ `installer.css`) | Fiche technicien « installer en 2 minutes » : servie sur le même domaine (`/installer.html`), cachée par le service worker |
 
 ### Connexion du dépôt (à faire dans l'interface Vercel)
 
@@ -434,7 +442,27 @@ version hébergée, et inversement. Avant de basculer un poste de l'un à l'autr
 
 ### ⚠️ Le mode technicien en version hébergée
 
-Le PIN et son hash sont publics (voir § 4) : sur l'instance hébergée le mode
-technicien n'est là que pour la démonstration. Si vous préférez qu'aucun poste
-ne puisse l'ouvrir, c'est une option simple à ajouter (une clé de configuration
-qui désactive l'appui long) — demandez-la avant de publier.
+Le PIN et son hash sont publics (voir § 4) : sur une instance publique le mode
+technicien ne doit pas être joignable. C'est pourquoi la configuration livrée
+dans le dépôt a **`"modeTechnicien": false`** : l'appui long est inerte, aucun
+panneau n'est construit, rien ne laisse deviner le mode. Pour une instance d'un
+**vrai client**, passez la clé à `true` dans `config.json` **et** `config.js`.
+
+### Installer chez un client en moins de 2 minutes (hébergé)
+
+Sans clé USB ni script :
+
+1. Sur le PC du client, ouvrez `https://votre-site.vercel.app/installer.html`
+   et suivez la fiche : ouvrir l'adresse dans Edge/Chrome → « Installer ce site
+   comme application » → vérifier l'icône sur le Bureau.
+   La bannière « Installer Mon Accueil sur cet ordinateur » (visible tant que
+   l'app n'est pas installée ou fermée) fait la même chose en un clic.
+2. Préparez `config.json` + `config.js` du client (prénom, banque, courriels,
+   `modeTechnicien: true`, PIN) et copiez-les sur un dossier `C:\MonAccueil` —
+   ou importez-les via le mode technicien puis « Sauvegarde de cette
+   configuration ».
+3. Réglez la page de démarrage du navigateur sur l'adresse (les 3 lignes de
+   secours figurent sur la fiche).
+
+Le dialog « Aide à distance » adapte son étape 2 : raccourci Bureau en
+`file://`, « touche Windows → tapez Assistance rapide (ou RustDesk) » en https.

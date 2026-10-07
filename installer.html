@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Même CSP stricte que l'application : aucun script/style externe, aucun inline -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Installer Mon Accueil</title>
+  <link rel="stylesheet" href="installer.css">
+</head>
+<body>
+  <h1>Installer Mon Accueil</h1>
+  <p class="intro">Fiche <strong>technicien</strong> — environ 2 minutes,
+     sans clé USB ni script. À faire sur l'ordinateur de la personne.</p>
+
+  <ol class="etapes">
+    <li>
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="12" width="52" height="40" rx="5"/><path d="M6 22h52"/><circle cx="13" cy="17" r="1.5"/><circle cx="20" cy="17" r="1.5"/><path d="M14 34h30"/></svg>
+      </span>
+      <span class="texte"><strong>Ouvrez l'adresse dans Edge ou Chrome.</strong>
+        Tapez dans la barre d'adresse l'adresse du site
+        (celle du déploiement, par exemple <code>https://…vercel.app</code>), puis Entrée.</span>
+    </li>
+    <li>
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10" width="36" height="26" rx="4"/><path d="M26 36v8M18 46h16"/><path d="M52 20v22M52 42l-7-8M52 42l7-8"/></svg>
+      </span>
+      <span class="texte"><strong>« Installer ce site comme application ».</strong>
+        <span class="detail"><strong>Edge :</strong> menu ⋯ → <em>Applications</em> →
+          « Installer ce site comme application » (ou l'icône d'installation dans la
+          barre d'adresse).<br>
+        <strong>Chrome :</strong> menu ⋮ → <em>Caster, enregistrer et partager</em> →
+          « Installer la page comme application… » (ou l'icône écran-flèche dans la
+          barre d'adresse).</span></span>
+    </li>
+    <li>
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" aria-hidden="true"><img src="icons/app.svg" alt="" width="64" height="64"></span>
+      <span class="texte"><strong>Vérifiez l'icône « Mon Accueil » sur le Bureau</strong>
+        (ou dans le menu Démarrer), lancez-la une fois : la page s'ouvre en plein
+        écran, sans barre d'adresse. C'est terminé.</span>
+    </li>
+  </ol>
+
+  <div class="secours">
+    <h2>En secours : l'adresse comme page de démarrage</h2>
+    <p>Edge : ⋯ → <em>Paramètres</em> → « Au démarrage » → « Ouvrir ces pages » → ajouter l'adresse.</p>
+    <p>Chrome : ⋮ → <em>Paramètres</em> → « Au démarrage » → « Ouvrir une page ou un ensemble de pages spécifiques » → ajouter l'adresse.</p>
+    <p>La personne peut ainsi utiliser Mon Accueil même sans installation.</p>
+  </div>
+
+  <p class="note">Si la bannière « Installer Mon Accueil sur cet ordinateur » apparaît
+     en haut de la page, un clic dessus fait la même chose que l'étape 2.</p>
+</body>
+</html>

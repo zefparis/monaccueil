@@ -5,7 +5,7 @@
    officiels s'ouvrent dans un nouvel onglet, hors de la portée du SW).
    Incrémentez VERSION à chaque mise à jour des fichiers.
    ===================================================================== */
-var VERSION = 'monaccueil-v3';
+var VERSION = 'monaccueil-v4';
 var FICHIERS = [
   './',
   './index.html',
@@ -16,6 +16,8 @@ var FICHIERS = [
   './config.js',
   './config.json',
   './manifest.webmanifest',
+  './installer.html',
+  './installer.css',
   './icons/impots.svg', './icons/sante.svg', './icons/famille.svg', './icons/retraite.svg',
   './icons/administration.svg', './icons/medecin.svg', './icons/courrier.svg', './icons/banque.svg',
   './icons/mails.svg', './icons/photos.svg', './icons/meteo.svg', './icons/aide.svg',

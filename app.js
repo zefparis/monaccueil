@@ -35,6 +35,7 @@
   // Deux compteurs anonymes (aucune adresse n'est jamais conservée)
   var CLE_STAT_VERIFICATIONS = 'monaccueil.stat.verifications';
   var CLE_STAT_ROUGES = 'monaccueil.stat.rouges';
+  var CLE_INSTALL = 'monaccueil.install.ferme';
 
   var DUREE_APPUI_LONG = 3000; // ms
 
@@ -219,6 +220,8 @@
         telephone: typeof tech.telephone === 'string' ? tech.telephone.trim() : ''
       },
       pinHash: typeof c.pinHash === 'string' ? c.pinHash.toLowerCase() : '',
+      // false = mode technicien totalement désactivé (instance publique de démo) ; absent ou autre valeur = actif
+      modeTechnicien: typeof c.modeTechnicien === 'boolean' ? c.modeTechnicien : true,
       domainesOfficiels: listeDomaines(Array.isArray(c.domainesOfficiels) ? c.domainesOfficiels : []),
       raccourcisseurs: listeDomaines(Array.isArray(c.raccourcisseurs) ? c.raccourcisseurs : (Array.isArray(defaut.raccourcisseurs) ? defaut.raccourcisseurs : [])),
       arnaques: listeArnaques(Array.isArray(c.arnaques) ? c.arnaques : (Array.isArray(defaut.arnaques) ? defaut.arnaques : [])),
@@ -315,10 +318,14 @@
     afficherBizarre();
   }
 
-  /** Textes des étapes 3 et 4 selon l'outil choisi (le déroulé diffère un peu). */
+  /** Textes des étapes 2 à 4 selon l'outil choisi et le mode d'hébergement
+      (file:// : raccourci Bureau ; https : l'outil se lance depuis le menu Démarrer). */
   function afficherAideDistance() {
     remplirLienTelephone($('distance-telephone'));
     var outil = config.aideDistance.outil;
+    $('distance-etape-lancer').textContent = location.protocol === 'file:'
+      ? 'Double-cliquez sur l\'icône « Aide à distance » sur votre Bureau.'
+      : 'Appuyez sur la touche Windows, tapez « ' + (outil === 'rustdesk' ? 'RustDesk' : 'Assistance rapide') + ' », puis cliquez dessus.';
     $('distance-etape-code').textContent = outil === 'rustdesk'
       ? 'Lisez-moi le code (votre identifiant) qui s\'affiche à l\'écran.'
       : 'Lisez-moi ce qui s\'affiche, puis tapez le code que je vous donne au téléphone et cliquez sur « Envoyer ».';
@@ -511,6 +518,44 @@
       fermerDialog(dd);
       var tuile = document.querySelector('.tuile-distance');
       if (tuile) { tuile.focus(); }
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Suggestion d'installation (PWA)
+     Affichée seulement si le navigateur propose l'installation et que la
+     personne n'a pas déjà installé ou fermé la bannière. Un drapeau local
+     mémorise le choix ; rien d'autre n'est stocké.
+     ------------------------------------------------------------------ */
+
+  var installEvent = null;
+
+  function initInstall() {
+    var banniere = $('banniere-install');
+    if (!banniere || lireStockage(CLE_INSTALL) === '1') { return; }
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) { return; }
+    window.addEventListener('beforeinstallprompt', function (ev) {
+      ev.preventDefault();
+      installEvent = ev;
+      banniere.hidden = false;
+    });
+    window.addEventListener('appinstalled', function () {
+      banniere.hidden = true;
+      ecrireStockage(CLE_INSTALL, '1');
+    });
+    $('btn-install').addEventListener('click', function () {
+      if (!installEvent) { return; }
+      var ev = installEvent;
+      installEvent = null;
+      ev.prompt();
+      ev.userChoice.then(function (choix) {
+        banniere.hidden = true;
+        if (choix && choix.outcome === 'accepted') { ecrireStockage(CLE_INSTALL, '1'); }
+      });
+    });
+    $('btn-install-fermer').addEventListener('click', function () {
+      banniere.hidden = true;
+      ecrireStockage(CLE_INSTALL, '1');
     });
   }
 
@@ -709,6 +754,12 @@
     // Le second téléchargement est légèrement différé pour que les navigateurs l'acceptent
     setTimeout(function () { telechargerFichier('config.js', texteConfigJs(exporte), 'text/javascript'); }, 400);
     afficherMessagesTech(['Deux fichiers téléchargés : config.json et config.js. Copiez-les tous les deux dans le dossier MonAccueil.'].concat(v.avertissements), v.avertissements.length ? 'avertissement' : 'confirmation');
+  }
+
+  /** Télécharge uniquement config.json (la configuration appliquée) pour la ranger chez le client. */
+  function sauvegarderConfig() {
+    telechargerFichier('config.json', JSON.stringify(config, null, 2) + '\n', 'application/json');
+    afficherMessagesTech(['Sauvegarde téléchargée : rangez ce config.json dans le dossier MonAccueil du client.'], 'confirmation');
   }
 
   function importerConfig(fichier) {
@@ -929,9 +980,11 @@
     champImport.addEventListener('change', function () { importerConfig(champImport.files[0]); champImport.value = ''; });
     var importer = el('button', { type: 'button', 'class': 'bouton', text: 'Importer une configuration' });
     importer.addEventListener('click', function () { champImport.click(); });
+    var sauvegarde = el('button', { type: 'button', 'class': 'bouton', text: 'Sauvegarde de cette configuration' });
+    sauvegarde.addEventListener('click', sauvegarderConfig);
     var reinit = el('button', { type: 'button', 'class': 'bouton', text: 'Revenir au fichier d\'origine' });
     reinit.addEventListener('click', reinitialiserConfig);
-    p.appendChild(el('div', { 'class': 'barre' }, [enregistrer, exporter, importer, champImport, reinit]));
+    p.appendChild(el('div', { 'class': 'barre' }, [enregistrer, exporter, importer, champImport, sauvegarde, reinit]));
 
     // Informations générales
     p.appendChild(el('h3', { text: 'Informations générales' }));
@@ -1345,12 +1398,13 @@
     setInterval(majHorloge, 1000);
     initAide();
     initBizarre();
-    initAppuiLong();
-    initPin();
+    initInstall();
     chargerConfig().then(function (c) {
       config = c;
       afficherEntete();
       afficherTuiles();
+      // modeTechnicien : false (démo publique) = aucun geste, aucun code du panneau construit
+      if (config.modeTechnicien !== false) { initAppuiLong(); initPin(); }
     });
     initServiceWorker();
   }

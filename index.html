@@ -35,6 +35,14 @@
     <button type="button" id="btn-contraste" class="bouton bouton-reglage" aria-pressed="false">Contraste élevé</button>
   </nav>
 
+  <!-- Suggestion d'installation (beforeinstallprompt) : cachée par défaut,
+       affichée par app.js uniquement si le navigateur la propose et que la personne
+       ne l'a pas déjà installée ou fermée -->
+  <div id="banniere-install" class="banniere-install" hidden>
+    <button type="button" id="btn-install" class="bouton">Installer Mon Accueil sur cet ordinateur</button>
+    <button type="button" id="btn-install-fermer" class="bouton banniere-fermer" aria-label="Ne plus proposer l'installation">✕</button>
+  </div>
+
   <main id="contenu">
     <!-- La grille de tuiles est générée par app.js à partir de la configuration -->
     <ul id="tuiles" class="tuiles" aria-label="Mes services en ligne"></ul>
@@ -67,7 +75,7 @@
         <span class="etape-texte">Appelez-moi d'abord au</span>
         <a id="distance-telephone" class="aide-telephone" href="#"></a>
       </li>
-      <li><span class="etape-texte">Double-cliquez sur l'icône <strong>« Aide à distance »</strong> sur votre Bureau.</span></li>
+      <li><span class="etape-texte" id="distance-etape-lancer"></span></li>
       <li><span class="etape-texte" id="distance-etape-code"></span></li>
       <li><span class="etape-texte" id="distance-etape-accepter"></span></li>
     </ol>

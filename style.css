@@ -131,6 +131,18 @@ body {
   padding: 0.5rem 2rem 1rem;
 }
 
+/* ---------- Bannière « Installer » (PWA) ---------- */
+.banniere-install {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 0.5rem 2rem 1rem;
+}
+.banniere-install[hidden] { display: none; }
+.banniere-install .bouton { font-size: 1rem; min-height: 2.5rem; padding: 0.4rem 1rem; }
+.banniere-fermer { padding: 0.4rem 0.7rem; }
+
 /* ---------- Boutons génériques ---------- */
 .bouton {
   font: inherit;

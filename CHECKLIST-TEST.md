@@ -166,6 +166,24 @@ Cochez chaque ligne. Durée : environ 15 minutes.
       met à jour).
 - [ ] Bascule file:// → https d'un poste : la configuration et le journal ont
       été exportés AVANT (les stockages sont séparés).
-- [ ] Le mode technicien (appui long 3 s + PIN `1234`) ne sert que de
-      démonstration : tout le monde peut l'ouvrir, ne rien y stocker de réel.
+- [ ] Le mode technicien est **désactivé** sur la démo publique
+      (`"modeTechnicien": false`) : l'appui long 3 s sur le titre ne fait rien,
+      aucune boîte PIN n'apparaît.
+- [ ] Sur une instance de **vrai client** (`"modeTechnicien": true`), l'appui
+      long + PIN ouvrent le panneau comme en local.
+
+### K bis. Nouveau client en version hébergée (≈ 2 minutes)
+
+- [ ] `/installer.html` s'ouvre sur le PC du client ; les 3 étapes sont lisibles.
+- [ ] La bannière « Installer Mon Accueil sur cet ordinateur » apparaît en haut
+      (uniquement avant installation), son clic ouvre la fenêtre d'installation.
+- [ ] App installée : icône « Mon Accueil » sur le Bureau ou le menu Démarrer,
+      ouverture en plein écran ; la bannière n'apparaît plus (ni après fermeture
+      de la bannière avec ✕).
+- [ ] Dialog « Aide à distance » : l'étape 2 dit « touche Windows → Assistance
+      rapide » (et non le raccourci Bureau).
+- [ ] Configuration du client importée puis **« Sauvegarde de cette
+      configuration »** : `config.json` rangé dans `C:\MonAccueil`.
+- [ ] Page de démarrage du navigateur réglée sur l'adresse (secours).
+- [ ] **Temps mesuré** de l'installation : ______ minutes (objectif < 2).
 - [ ] Même contrôle **dans Edge et Firefox**.
