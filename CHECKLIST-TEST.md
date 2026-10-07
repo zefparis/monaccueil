@@ -14,6 +14,23 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 - [ ] Aucun message d'erreur, aucune barre jaune « bloqué » dans le navigateur.
 - [ ] (Si plein écran) Pas de barre d'adresse, pas d'onglets visibles.
 
+## A bis. Prénom choisi par la personne
+
+- [ ] Premier lancement sans prénom configuré : le dialog « Comment voulez-vous
+      que je vous appelle ? » s'affiche, utilisable au clavier (Entrée valide,
+      Échap = « Plus tard »).
+- [ ] Prénom valide (accents, tiret, apostrophe) : « Bonjour [prénom] » apparaît,
+      majuscule en première lettre, conservé après rechargement.
+- [ ] Refus net en gros caractères : chiffres, symboles, balise, > 30 caractères,
+      champ vide.
+- [ ] « Plus tard » : ferme, « Bonjour » seul, le dialog ne revient pas au
+      rechargement ; le lien « Choisir mon prénom » le rouvre pré-rempli.
+- [ ] Le prénom choisi n'apparaît **pas** dans l'export de la configuration ;
+      dans le panneau technicien, il est lisible en lecture seule et le bouton
+      « Effacer le prénom choisi » fonctionne.
+- [ ] Le lien « Changer mon prénom » n'a rien à voir avec l'appui long
+      technicien (qui reste discret et inchangé).
+
 ## B. Lisibilité
 
 - [ ] Assis à sa place habituelle, le client lit **tous** les libellés sans effort.

@@ -115,6 +115,31 @@ body {
   color: var(--texte-secondaire);
 }
 
+/* Lien « Choisir / Changer mon prénom » sous le titre : petit, souligné, pas une icône */
+.lien-prenom {
+  display: block;
+  margin: 0.1rem 0 0.2rem;
+  padding: 0.2rem 0.4rem;
+  font: inherit;
+  font-size: 1.05rem;
+  color: var(--texte-secondaire);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.lien-prenom:hover { color: var(--texte); }
+
+/* Lien « Plus tard » dans le dialog prénom : discret, jamais confondu avec un bouton principal */
+.lien-discret {
+  font-size: 1rem;
+  font-weight: 400;
+  border-color: transparent;
+  text-decoration: underline;
+  color: var(--texte-secondaire);
+}
+.lien-discret:hover { color: var(--texte); }
+
 .heure {
   margin: 0;
   font-size: 3.2rem;

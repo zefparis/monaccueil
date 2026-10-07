@@ -23,6 +23,8 @@
     <div class="entete-texte">
       <!-- Appui long de 3 secondes sur ce titre = accès au mode technicien (geste volontairement discret) -->
       <h1 id="titre" class="titre">Bonjour</h1>
+      <!-- Lien discret pour changer son prénom (rien à voir avec l'appui long) -->
+      <button type="button" id="lien-prenom" class="lien-prenom">Choisir mon prénom</button>
       <p id="date" class="date" aria-live="off"></p>
     </div>
     <p id="heure" class="heure" aria-label="Heure actuelle"></p>
@@ -122,6 +124,20 @@
       <a id="bizarre-telephone" class="aide-telephone" href="#"></a>
       <button type="button" id="btn-fermer-bizarre" class="bouton bouton-principal">Fermer</button>
     </div>
+  </dialog>
+
+  <!-- Premier lancement / changement de prénom par la personne elle-même -->
+  <dialog id="dialog-prenom" class="dialog" aria-labelledby="prenom-titre">
+    <form id="form-prenom" method="dialog" novalidate>
+      <h2 id="prenom-titre">Bienvenue !</h2>
+      <label for="champ-prenom">Comment voulez-vous que je vous appelle ?</label>
+      <input id="champ-prenom" type="text" autocomplete="given-name" maxlength="60" spellcheck="false">
+      <p id="prenom-erreur" class="erreur" role="alert"></p>
+      <div class="actions">
+        <button type="button" id="btn-prenom-plustard" class="bouton lien-discret">Plus tard</button>
+        <button type="submit" class="bouton bouton-principal">Valider</button>
+      </div>
+    </form>
   </dialog>
 
   <!-- Saisie du code PIN (mode technicien) -->

@@ -42,6 +42,12 @@
   var CLE_STAT_VERIFICATIONS = 'monaccueil.stat.verifications';
   var CLE_STAT_ROUGES = 'monaccueil.stat.rouges';
   var CLE_INSTALL = 'monaccueil.install.ferme';
+  var CLE_PRENOM = 'monaccueil.prenom';           // choisi par la personne, jamais dans config.json
+  var CLE_PRENOM_PLUSTARD = 'monaccueil.prenom.plustard';
+
+  // Prénom : lettres (accents compris), espaces, tiret, apostrophe ; commence par une lettre ; 30 max
+  var REGEX_PRENOM = /^[\p{L}][\p{L} '\-]*$/u;
+  var LONGUEUR_MAX_PRENOM = 30;
 
   var DUREE_APPUI_LONG = 3000; // ms
 
@@ -220,7 +226,8 @@
         // Identifiant RustDesk du poste du client : chiffres uniquement (jamais de mot de passe)
         idRustdesk: typeof dist.idRustdesk === 'string' ? dist.idRustdesk.replace(/[^0-9]/g, '') : ''
       },
-      prenom: typeof c.prenom === 'string' ? c.prenom.trim() : '',
+      // même règle que le prénom choisi : vide ou valide, sinon ignoré
+      prenom: prenomValide(typeof c.prenom === 'string' ? c.prenom.trim() : '') ? c.prenom.trim() : '',
       technicien: {
         nom: typeof tech.nom === 'string' ? tech.nom.trim() : '',
         telephone: typeof tech.telephone === 'string' ? tech.telephone.trim() : ''
@@ -317,8 +324,61 @@
     lien.lastChild.textContent = 'Appeler ' + (config.technicien.nom || 'mon technicien');
   }
 
+  /* ------------------------------------------------------------------
+     Prénom choisi par la personne (localStorage, clé séparée de la config)
+     Priorité d'affichage : choisi > config > « Bonjour » seul.
+     ------------------------------------------------------------------ */
+
+  var prenomChoisi = '';
+
+  function prenomValide(p) { return typeof p === 'string' && p.length <= LONGUEUR_MAX_PRENOM && REGEX_PRENOM.test(p); }
+  function prenomEffectif() { return prenomChoisi ? majusculeInitiale(prenomChoisi) : config.prenom; }
+
+  function chargerPrenomChoisi() {
+    var p = lireStockage(CLE_PRENOM);
+    prenomChoisi = (p && prenomValide(p)) ? p : '';
+  }
+
+  function ouvrirPrenom() {
+    $('champ-prenom').value = prenomEffectif();
+    $('prenom-erreur').textContent = '';
+    ouvrirDialog($('dialog-prenom'));
+    $('champ-prenom').focus();
+  }
+
+  function plusTardPrenom() {
+    ecrireStockage(CLE_PRENOM_PLUSTARD, '1');   // « plus tard » mémorisé, rien d'autre
+    fermerDialog($('dialog-prenom'));
+  }
+
+  function initPrenom() {
+    var d = $('dialog-prenom');
+    $('lien-prenom').addEventListener('click', ouvrirPrenom);
+    $('btn-prenom-plustard').addEventListener('click', plusTardPrenom);
+    d.addEventListener('cancel', plusTardPrenom);   // Échap = « Plus tard »
+    $('form-prenom').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var saisie = $('champ-prenom').value.trim().replace(/\s+/g, ' ');
+      if (!saisie) {
+        $('prenom-erreur').textContent = 'Écrivez votre prénom, ou cliquez sur « Plus tard ».';
+      } else if (!prenomValide(saisie)) {
+        $('prenom-erreur').textContent = 'Seulement des lettres, des espaces, un tiret ou une apostrophe (30 caractères maximum). Pas de chiffres ni de symboles.';
+      } else {
+        prenomChoisi = saisie;
+        ecrireStockage(CLE_PRENOM, saisie);
+        ecrireStockage(CLE_PRENOM_PLUSTARD, null);   // le choix remplace « plus tard »
+        $('prenom-erreur').textContent = '';
+        fermerDialog(d);
+        afficherEntete();
+      }
+      $('champ-prenom').focus();
+    });
+  }
+
   function afficherEntete() {
-    $('titre').textContent = config.prenom ? 'Bonjour ' + config.prenom : 'Bonjour';
+    var prenom = prenomEffectif();
+    $('titre').textContent = prenom ? 'Bonjour ' + prenom : 'Bonjour';
+    $('lien-prenom').textContent = prenom ? 'Changer mon prénom' : 'Choisir mon prénom';
     $('aide-nom').textContent = config.technicien.nom || 'Votre technicien';
     remplirLienTelephone($('aide-telephone'));
     afficherAideDistance();
@@ -736,7 +796,10 @@
   /** Vérifie le brouillon : retourne { erreurs: [], avertissements: [] }. */
   function validerBrouillon() {
     var erreurs = [], avertissements = [];
-    if (!brouillon.prenom) { erreurs.push('Le prénom est vide.'); }
+    // Prénom vide autorisé : la personne choisira elle-même au premier lancement
+    if (brouillon.prenom && !prenomValide(brouillon.prenom)) {
+      erreurs.push('Prénom : seulement des lettres, espaces, tiret ou apostrophe (30 caractères max).');
+    }
     if (!brouillon.technicien.telephone) { erreurs.push('Le numéro de téléphone du technicien est vide.'); }
     if (OUVERTURES.indexOf(brouillon.ouvertureSites) === -1) { brouillon.ouvertureSites = 'fenetre'; }
     if (OUTILS_DISTANCE.indexOf(brouillon.aideDistance.outil) === -1) { brouillon.aideDistance.outil = 'quickassist'; }
@@ -1061,13 +1124,29 @@
     // Informations générales
     p.appendChild(el('h3', { text: 'Informations générales' }));
     var general = el('div', { 'class': 'champs' });
-    general.appendChild(el('label', { 'for': 'tech-prenom' }, ['Prénom de la personne',
+    general.appendChild(el('label', { 'for': 'tech-prenom' }, ['Prénom de la personne (laissez vide : elle choisira elle-même)',
       el('input', { id: 'tech-prenom', name: 'prenom', type: 'text', value: brouillon.prenom, maxlength: '40', autocomplete: 'off' })]));
     general.appendChild(el('label', { 'for': 'tech-nom' }, ['Nom du technicien',
       el('input', { id: 'tech-nom', name: 'tech-nom', type: 'text', value: brouillon.technicien.nom, maxlength: '60', autocomplete: 'off' })]));
     general.appendChild(el('label', { 'for': 'tech-tel' }, ['Téléphone du technicien',
       el('input', { id: 'tech-tel', name: 'tech-tel', type: 'tel', value: brouillon.technicien.telephone, maxlength: '30', autocomplete: 'off' })]));
     p.appendChild(general);
+
+    // Prénom choisi par la personne (stockage local séparé, jamais dans config.json)
+    var lignePrenom = el('p', { 'class': 'discret', id: 'tech-prenom-choisi' });
+    var btnEffacerPrenom = el('button', { type: 'button', 'class': 'bouton', text: 'Effacer le prénom choisi' });
+    btnEffacerPrenom.addEventListener('click', function () {
+      ecrireStockage(CLE_PRENOM, null);
+      ecrireStockage(CLE_PRENOM_PLUSTARD, null);
+      prenomChoisi = '';
+      afficherEntete();
+      afficherMessagesTech(['Prénom choisi effacé : « Bonjour » seul s\'affiche, ou le prénom de la config.'], 'confirmation');
+      btnEffacerPrenom.disabled = true;
+      lignePrenom.textContent = 'Prénom choisi par la personne sur ce PC : aucun.';
+    });
+    lignePrenom.textContent = 'Prénom choisi par la personne sur ce PC : ' + (prenomChoisi ? '« ' + majusculeInitiale(prenomChoisi) + ' » (prioritaire sur le prénom ci-dessus, jamais exporté).' : 'aucun.');
+    btnEffacerPrenom.disabled = !prenomChoisi;
+    p.appendChild(el('div', { 'class': 'barre' }, [lignePrenom, btnEffacerPrenom]));
 
     // Ouverture des sites
     var selOuverture = el('select', { id: 'tech-ouverture', name: 'ouverture-sites' });
@@ -1478,14 +1557,19 @@
     initReglages();
     majHorloge();
     setInterval(majHorloge, 1000);
+    chargerPrenomChoisi();
     initAide();
     initBizarre();
     initInstall();
     initRetour();
+    initPrenom();
     chargerConfig().then(function (c) {
       config = c;
       afficherEntete();
       afficherTuiles();
+      // Premier lancement : demander le prénom seulement si ni choisi ni configuré,
+      // et pas déjà repoussé à « plus tard »
+      if (!prenomEffectif() && lireStockage(CLE_PRENOM_PLUSTARD) !== '1') { ouvrirPrenom(); }
       // modeTechnicien : false (démo publique) = aucun geste, aucun code du panneau construit
       if (config.modeTechnicien !== false) { initAppuiLong(); initPin(); }
     });

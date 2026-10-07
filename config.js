@@ -1,7 +1,7 @@
 /* Configuration embarquée de MonAccueil (copie de config.json pour l'ouverture en file://).
    Fichier généré par le mode technicien : ne pas modifier à la main, préférez config.json. */
 window.MONACCUEIL_CONFIG = {
-  "prenom": "Jeanne",
+  "prenom": "",
   "technicien": {
     "nom": "Benji",
     "telephone": "+33 7 58 06 05 56"

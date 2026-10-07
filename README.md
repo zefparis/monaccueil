@@ -83,7 +83,7 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
 
 ```json
 {
-  "prenom": "Jeanne",
+  "prenom": "",
   "technicien": { "nom": "Benji", "telephone": "+33 7 58 06 05 56" },
   "pinHash": "03ac67…46f4",
   "domainesOfficiels": ["impots.gouv.fr", "ameli.fr", "..."],
@@ -104,6 +104,13 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   administration.svg, medecin.svg, courrier.svg, banque.svg, mails.svg, photos.svg,
   meteo.svg, cle.svg, aide.svg, telephone.svg, bouclier.svg`.
 - `couleur` : code hexadécimal à 6 chiffres. Choisissez des couleurs foncées.
+- `prenom` : prénom affiché après « Bonjour » ; laissez vide pour que la
+  personne choisisse elle-même au premier lancement. **Priorité d'affichage** :
+  prénom choisi par la personne (`localStorage`, clé `monaccueil.prenom`,
+  jamais dans `config.json` ni dans l'export) > `prenom` de la config >
+  « Bonjour » seul. Le lien « Choisir / Changer mon prénom » sous le titre
+  rouvre le dialog ; « Plus tard » est mémorisé sans donnée. Le panneau
+  technicien affiche le prénom choisi (lecture seule) et peut l'effacer.
 - `modeTechnicien` : `true` par défaut (absent = actif). `false` désactive
   totalement le mode technicien : l'appui long sur le titre ne fait rien, aucun
   panneau n'est construit, rien ne le laisse deviner. Mettez `false` sur une
@@ -407,8 +414,9 @@ rafraîchissement du cache hors ligne.
 
 Le site peut être hébergé en https — par exemple chez Vercel — pour servir de
 **démonstration** ou d'accueil de dépannage distant. Le dépôt ne contient qu'une
-configuration générique : prénom « Jeanne », technicien « Benji » avec son
-numéro professionnel (public), aucune donnée client.
+configuration générique : prénom **vide** (la personne choisit le sien au
+premier lancement), technicien « Benji » avec son numéro professionnel
+(public), aucune donnée client.
 
 ### Fichiers ajoutés pour l'hébergement
 

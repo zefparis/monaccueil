@@ -84,6 +84,13 @@
     }
     .telephone .bete { font-size: 22pt; margin: 0; font-weight: 700; }
 
+    .note {
+      margin-top: 10pt;
+      text-align: center;
+      font-size: 22pt;
+      color: #374151;
+    }
+
     /* Rappel final */
     .rappel {
       margin-top: 12pt;
