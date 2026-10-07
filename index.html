@@ -34,6 +34,7 @@
         <button type="button" id="btn-taille-moins" class="bouton bouton-reglage">Texte plus petit</button>
         <button type="button" id="btn-taille-plus" class="bouton bouton-reglage">Texte plus grand</button>
         <button type="button" id="btn-contraste" class="bouton bouton-reglage" aria-pressed="false">Contraste</button>
+        <button type="button" id="lien-palette" class="bouton bouton-reglage">Changer les couleurs</button>
       </nav>
     </div>
   </header>
@@ -53,6 +54,11 @@
     <!-- Les tuiles sont générées par app.js, regroupées en familles si la config définit des groupes -->
     <div id="tuiles" aria-label="Mes services en ligne"></div>
     <p id="message-vide" class="message-vide" hidden>Aucun bouton n'est configuré pour le moment.</p>
+    <!-- Liens de personnalisation par la personne (déplacés dans « Mon quotidien » par app.js) -->
+    <div class="perso-actions" id="perso-actions" hidden>
+      <button type="button" id="lien-ajout" class="lien-prenom">Ajouter un bouton</button>
+      <button type="button" id="lien-retrait" class="lien-prenom" hidden>Retirer mes boutons</button>
+    </div>
   </main>
 
   <footer class="pied">
@@ -155,11 +161,67 @@
     </form>
   </dialog>
 
+  <!-- Choix des couleurs : 6 palettes fixes, jamais de couleur libre -->
+  <dialog id="dialog-palette" class="dialog dialog-palette" aria-labelledby="palette-titre">
+    <h2 id="palette-titre">Changer les couleurs</h2>
+    <p class="aide-texte">Choisissez les couleurs qui vous plaisent. Le texte restera toujours bien lisible. Si le contraste élevé est activé, il garde la priorité.</p>
+    <div id="liste-palettes" class="liste-palettes"></div>
+    <div class="actions">
+      <button type="button" id="btn-palette-defaut" class="bouton">Revenir aux couleurs d'origine</button>
+      <button type="button" id="btn-fermer-palette" class="bouton bouton-principal">Fermer</button>
+    </div>
+  </dialog>
+
+  <!-- Ajout d'une case par la personne : catalogue en 1 clic, puis « Autre site » -->
+  <dialog id="dialog-ajout" class="dialog dialog-ajout" aria-labelledby="ajout-titre">
+    <h2 id="ajout-titre">Ajouter un bouton</h2>
+    <p id="ajout-erreur" class="erreur" role="alert"></p>
+    <div id="ajout-zone-catalogue">
+      <p class="aide-texte">Cliquez sur un service pour l'ajouter :</p>
+      <div id="liste-catalogue" class="liste-catalogue"></div>
+      <button type="button" id="lien-autre-site" class="bouton lien-discret" hidden>Autre site : je colle son adresse</button>
+    </div>
+    <div id="ajout-zone-libre" hidden>
+      <label for="ajout-url">Adresse du site (collez-la, elle doit commencer par https://) :</label>
+      <input id="ajout-url" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.exemple.fr">
+      <label for="ajout-nom">Nom du bouton :</label>
+      <input id="ajout-nom" type="text" maxlength="60" autocomplete="off" spellcheck="false" placeholder="Ex. Ma banque">
+      <p class="discret" id="ajout-icone-titre">Choisissez une icône :</p>
+      <div id="liste-icones" class="liste-icones" role="radiogroup" aria-labelledby="ajout-icone-titre"></div>
+      <div id="ajout-pin" hidden>
+        <label for="champ-pin-ajout">Code du technicien (4 chiffres) :</label>
+        <div class="ligne-verif">
+          <input id="champ-pin-ajout" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off">
+          <button type="button" id="btn-ajout-pin" class="bouton">Valider le code</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="btn-ajout-retour" class="bouton lien-discret">Retour à la liste</button>
+        <button type="button" id="btn-ajouter" class="bouton bouton-principal">Ajouter ce bouton</button>
+      </div>
+    </div>
+    <div class="actions" id="ajout-actions">
+      <button type="button" id="btn-fermer-ajout" class="bouton bouton-principal">Fermer</button>
+    </div>
+  </dialog>
+
+  <!-- Retrait des cases ajoutées par la personne (jamais les cases de la config) -->
+  <dialog id="dialog-retrait" class="dialog" aria-labelledby="retrait-titre">
+    <h2 id="retrait-titre">Retirer mes boutons</h2>
+    <p class="aide-texte">Seuls les boutons que vous avez ajoutés peuvent être retirés ici.</p>
+    <ul id="liste-retrait" class="liste-retrait"></ul>
+    <div class="actions">
+      <button type="button" id="btn-fermer-retrait" class="bouton bouton-principal">Fermer</button>
+    </div>
+  </dialog>
+
   <!-- Panneau technicien (généré par app.js) -->
   <section id="panneau-tech" class="panneau-tech" hidden aria-labelledby="tech-titre"></section>
 
   <!-- Icônes (SVG inline, générées par outils/gen-icones.py) -->
   <script src="icones.js"></script>
+  <!-- Catalogue de services proposés par « Ajouter un bouton » (modifiable par le technicien via la config) -->
+  <script src="catalogue.js"></script>
   <!-- Configuration embarquée (fallback si config.json ne peut pas être lu, par ex. en file://) -->
   <script src="config.js"></script>
   <!-- Vérification locale d'une adresse (aucun lien ouvert, aucun envoi) ; testé par outils/test-verification.js -->

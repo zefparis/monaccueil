@@ -17,14 +17,28 @@
   --focus-halo: #fde047;
   --aide: #b91c1c;            /* rouge sombre, blanc dessus = 7.4:1 */
   --aide-texte: #ffffff;
-  --principal: #1d4ed8;
+  --principal: #1e40af;
   --principal-texte: #ffffff;
   --erreur: #b91c1c;
   --rayon: 1.15rem;
   --ombre: 0 0.1rem 0.4rem rgba(28, 25, 23, 0.08), 0 0.5rem 1.4rem rgba(28, 25, 23, 0.05);
   --ombre-survol: 0 0.3rem 0.8rem rgba(28, 25, 23, 0.14), 0 0.8rem 2rem rgba(28, 25, 23, 0.08);
   --transition: 250ms ease;
+  /* Pastille des cases ajoutées par la personne : teinte de la palette courante */
+  --accent-pastille: var(--principal);
 }
+
+/* ---------- Palettes de couleurs (choix de la personne, liste blanche) ----------
+   Chaque palette ne change que les couleurs du mode normal : fond, carte,
+   couleur d'accent (boutons, liens, pastilles des cases ajoutées) et liseré.
+   Le texte garde un contraste >= 7:1 (vérifié par outils/test-palettes.js).
+   Ces règles sont placées AVANT le mode contraste élevé, qui les recouvre. */
+.palette-chaleureux { --fond: #faf7f1; --carte: #ffffff; --fond-doux: #f1ece2; --bordure: #d8d0c2; --principal: #1e40af; }
+.palette-bleu   { --fond: #edf3fa; --carte: #ffffff; --fond-doux: #dbe7f4; --bordure: #c0d2e5; --principal: #1e40af; }
+.palette-vert   { --fond: #eef6ef; --carte: #ffffff; --fond-doux: #dcede0; --bordure: #c2dbc8; --principal: #166534; }
+.palette-violet { --fond: #f4f1fa; --carte: #ffffff; --fond-doux: #e9e2f5; --bordure: #d2c8e8; --principal: #5b21b6; }
+.palette-rose   { --fond: #faf1f3; --carte: #ffffff; --fond-doux: #f4dfe4; --bordure: #e5c4cd; --principal: #9f1239; }
+.palette-gris   { --fond: #f3f4f4; --carte: #ffffff; --fond-doux: #e6e8e8; --bordure: #cbcdcd; --principal: #374151; }
 
 /* Trois niveaux de taille de texte (base 20px minimum) */
 html.taille-1 { font-size: 20px; }
@@ -57,6 +71,9 @@ html.contraste-eleve {
 
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
+
+/* L'attribut hidden doit toujours gagner sur les display des composants */
+[hidden] { display: none !important; }
 
 html { background: var(--fond); }
 
@@ -299,9 +316,9 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
   padding: 0.5rem;
   box-sizing: border-box;
   border-radius: 50%;
-  color: var(--couleur, currentColor);
+  color: var(--couleur, var(--accent-pastille));
   background: var(--fond-doux);                                 /* repli si color-mix absent */
-  background: color-mix(in srgb, var(--couleur, #6b7280) 14%, #ffffff);
+  background: color-mix(in srgb, var(--couleur, var(--accent-pastille)) 14%, #ffffff);
   fill: none;
   stroke: currentColor;
   stroke-width: 5;
@@ -612,3 +629,123 @@ body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.
   .entete-droite { align-items: flex-start; }
   .reglages { justify-content: flex-start; }
 }
+
+/* ---------- Personnalisation : choix des couleurs ---------- */
+/* Liens sous la grille « Mon quotidien » (même aspect que « Changer mon prénom ») */
+.perso-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  margin: 0;
+  padding-left: 0.2rem;
+}
+.perso-actions .lien-prenom { font-size: 0.95rem; padding: 0.05rem 0.3rem; margin: 0; }
+
+/* Dialog des palettes : grosses cartes d'aperçu, chacune teintée de sa palette */
+.dialog-palette { max-width: 46rem; }
+.liste-palettes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0;
+}
+.palette-carte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  border: 0.15rem solid var(--bordure, #cccccc);
+  border-radius: var(--rayon);
+  background: var(--fond);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.palette-carte[aria-pressed="true"] { outline: 0.25rem solid var(--focus); outline-offset: 0.1rem; }
+.palette-apercu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 0.08rem solid var(--bordure, #cccccc);
+  border-radius: 0.55rem;
+  background: var(--carte, #ffffff);
+}
+.palette-pastille { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--principal); }
+.palette-ligne { display: block; height: 0.5rem; border-radius: 0.25rem; background: var(--fond-doux, #eee); }
+.palette-ligne-courte { width: 60%; }
+.palette-nom { font-weight: 700; font-size: 1rem; color: #1c1917; }
+html.contraste-eleve .palette-nom { color: #ffffff; }
+
+/* ---------- Ajout d'une case par la personne ---------- */
+.dialog-ajout { max-width: 52rem; }
+.dialog-ajout label { display: block; font-weight: 700; margin: 0.7rem 0 0.2rem; }
+.dialog-ajout input { width: 100%; }
+.liste-catalogue {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.8rem;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+.catalogue-carte {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem;
+  min-height: 3.4rem;
+  border: 0.12rem solid var(--bordure);
+  border-radius: 0.7rem;
+  background: var(--carte);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: left;
+  color: var(--texte);
+}
+.catalogue-carte:hover { border-color: var(--principal); }
+.catalogue-carte .icone { width: 2rem; height: 2rem; padding: 0.35rem; }
+
+/* Grosses vignettes d'icônes (étape « Autre site ») */
+.liste-icones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.4rem 0;
+}
+.icone-vignette {
+  width: 3.6rem;
+  height: 3.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.15rem solid var(--bordure);
+  border-radius: 0.7rem;
+  background: var(--carte);
+  cursor: pointer;
+}
+.icone-vignette .icone { width: 2.4rem; height: 2.4rem; }
+.icone-vignette.choisie { border-color: var(--principal); background: var(--fond-doux); }
+
+#ajout-pin {
+  margin-top: 0.8rem;
+  padding: 0.7rem;
+  border: 0.2rem solid var(--aide);
+  border-radius: 0.7rem;
+}
+
+/* Dialog « Retirer mes boutons » */
+.liste-retrait { list-style: none; margin: 0.6rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.liste-retrait li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem;
+  border: 0.12rem solid var(--bordure);
+  border-radius: 0.7rem;
+  background: var(--carte);
+}
+.liste-retrait .icone { width: 2rem; height: 2rem; padding: 0.3rem; }
+.retrait-nom { flex: 1; font-weight: 700; }

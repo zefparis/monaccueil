@@ -31,6 +31,27 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 - [ ] Le lien « Changer mon prénom » n'a rien à voir avec l'appui long
       technicien (qui reste discret et inchangé).
 
+## A ter. Couleurs et boutons ajoutés par la personne
+
+- [ ] « Changer les couleurs » (en haut à droite) : 6 grandes cartes avec leur
+      nom ; un clic change le fond et les accents immédiatement, le choix reste
+      après rechargement ; « Revenir aux couleurs d'origine » fonctionne.
+- [ ] En mode « Contraste » : la palette n'a aucun effet (le noir/blanc/jaune
+      garde la priorité).
+- [ ] « Ajouter un bouton » sous « Mon quotidien » : cliquer un service du
+      catalogue ajoute la case sans rien taper ; elle s'ouvre comme les autres
+      (fenêtre à droite, bandeau de retour).
+- [ ] « Autre site » : une adresse reconnue (ex. laposte.fr) s'ajoute ; une
+      adresse inconnue affiche « Ce site n'est pas dans la liste de confiance »
+      et attend votre code à 4 chiffres (mauvais code = refus avec délai).
+- [ ] Refus nets : adresse sans https, « javascript: », doublon, 9e bouton,
+      nom vide ou avec symboles.
+- [ ] « Retirer mes boutons » : liste uniquement les cases ajoutées,
+      « Retirer » demande confirmation ; les cases de la config n'y figurent pas.
+- [ ] Panneau technicien : palette choisie et boutons ajoutés lisibles en
+      lecture seule ; « Effacer la personnalisation » remet tout à zéro ;
+      l'export contient une section « personnalisation » séparée de « tuiles ».
+
 ## B. Lisibilité
 
 - [ ] Assis à sa place habituelle, le client lit **tous** les libellés sans effort.

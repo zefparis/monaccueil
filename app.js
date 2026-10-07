@@ -44,6 +44,10 @@
   var CLE_INSTALL = 'monaccueil.install.ferme';
   var CLE_PRENOM = 'monaccueil.prenom';           // choisi par la personne, jamais dans config.json
   var CLE_PRENOM_PLUSTARD = 'monaccueil.prenom.plustard';
+  var CLE_PALETTE = 'monaccueil.palette';         // couleurs choisies par la personne
+  var CLE_PERSO = 'monaccueil.perso';             // cases ajoutées par la personne (JSON)
+  // Compteur anonyme des ajouts refusés par le vérificateur (aucun contenu conservé)
+  var CLE_STAT_REFUS = 'monaccueil.stat.ajouts-refuses';
 
   // Prénom : lettres (accents compris), espaces, tiret, apostrophe ; commence par une lettre ; 30 max
   var REGEX_PRENOM = /^[\p{L}][\p{L} '\-]*$/u;
@@ -64,11 +68,28 @@
   var REGEX_GROUPE = /^[\p{L}\p{N} '\-]+$/u;
   var LONGUEUR_MAX_GROUPE = 40;
 
+  // Personnalisation par la personne : 6 palettes fixes, jamais de couleur libre (liste blanche)
+  var PALETTES = ['chaleureux', 'bleu', 'vert', 'violet', 'rose', 'gris'];
+  var PALETTE_DEFAUT = 'chaleureux';
+  var NOMS_PALETTES = { chaleureux: 'Chaleureux', bleu: 'Bleu', vert: 'Vert', violet: 'Violet', rose: 'Rose', gris: 'Gris' };
+  // Ajout de cases : 'catalogue' (liste proposée seule), 'libre' (catalogue + adresse libre avec PIN pour
+  // les domaines inconnus), 'non' (rien). La case va toujours dans « Mon quotidien ».
+  var AJOUTS = ['catalogue', 'libre', 'non'];
+  var MAX_PERSO = 8;
+  var GROUPE_PERSO = 'Mon quotidien';
+  // Nom d'une case ajoutée : mêmes règles que le prénom + chiffres, 1 à 24 caractères
+  var REGEX_NOM_BOUTON = /^[\p{L}\p{N}][\p{L}\p{N} '\-]*$/u;
+  var LONGUEUR_MAX_NOM_BOUTON = 24;
+
   var DUREE_APPUI_LONG = 3000; // ms
 
   // Configuration active et brouillon du mode technicien
   var config = null;
   var brouillon = null;
+  // Personnalisation locale de la personne : couleurs choisies et cases ajoutées
+  var paletteChoisie = '';
+  var tuilesPerso = [];
+  var echecsPin = 0;   // ralentissement partagé après chaque mauvais code
 
   /* ------------------------------------------------------------------
      Petits utilitaires
@@ -227,6 +248,56 @@
     });
   }
 
+  /** Nom d'une case ajoutée par la personne : 1 à 24 caractères, lettres/chiffres, espaces, tiret, apostrophe. */
+  function nomBoutonValide(n) {
+    return typeof n === 'string' && n.trim().length >= 1 && n.trim().length <= LONGUEUR_MAX_NOM_BOUTON && REGEX_NOM_BOUTON.test(n.trim());
+  }
+
+  /** Catalogue des services proposés : config.catalogue (facultatif) ou catalogue.js embarqué. */
+  function normaliserCatalogue(liste) {
+    if (!Array.isArray(liste)) { return null; }  // absent → on garde le catalogue embarqué
+    return liste.filter(function (s) { return s && typeof s === 'object'; }).map(function (s, i) {
+      var label = typeof s.label === 'string' ? s.label.trim() : '';
+      var url = typeof s.url === 'string' ? s.url.trim() : '';
+      return { id: 'catalogue-' + (i + 1), label: label, url: url,
+        icone: iconeValide(s.icone) ? s.icone : ICONE_DEFAUT, ok: !!(label && analyserUrl(url).ok) };
+    }).filter(function (s) { return s.ok; });
+  }
+
+  /** Catalogue actif : la config peut le remplacer, sinon celui de catalogue.js. */
+  function catalogue() {
+    return config.catalogue || normaliserCatalogue(window.MONACCUEIL_CATALOGUE) || [];
+  }
+
+  /** Liste des domaines reconnus : domaines officiels de la config + domaines du catalogue. */
+  function domainesReconnus() {
+    var liste = config.domainesOfficiels.slice();
+    catalogue().forEach(function (s) {
+      var a = analyserUrl(s.url);
+      if (a.ok && liste.indexOf(a.hote) === -1) { liste.push(a.hote); }
+    });
+    return liste;
+  }
+
+  /** Nettoie les cases ajoutées par la personne (stockage ou import) : même schéma strict que les tuiles. */
+  function normaliserPerso(liste) {
+    if (!Array.isArray(liste)) { return []; }
+    var vues = {};
+    var out = [];
+    liste.forEach(function (t) {
+      if (!t || typeof t !== 'object') { return; }
+      var label = typeof t.label === 'string' ? t.label.trim() : '';
+      var url = typeof t.url === 'string' ? t.url.trim() : '';
+      var a = analyserUrl(url);
+      if (!nomBoutonValide(label) || !a.ok || !iconeValide(t.icone)) { return; }
+      var cle = url.toLowerCase().replace(/\/+$/, '');
+      if (vues[cle]) { return; }
+      vues[cle] = true;
+      out.push({ id: 'perso-' + out.length, label: label, url: url, icone: t.icone, couleur: '', groupe: GROUPE_PERSO });
+    });
+    return out.slice(0, MAX_PERSO);
+  }
+
   /** Nettoie une configuration brute (fichier, import, stockage) et garantit sa structure.
       Les clés « raccourcisseurs » et « arnaques » absentes (ancienne config) sont reprises de config.js. */
   function normaliserConfig(brut) {
@@ -251,6 +322,11 @@
       // false = mode technicien totalement désactivé (instance publique de démo) ; absent ou autre valeur = actif
       modeTechnicien: typeof c.modeTechnicien === 'boolean' ? c.modeTechnicien : true,
       ouvertureSites: OUVERTURES.indexOf(c.ouvertureSites) !== -1 ? c.ouvertureSites : 'fenetre',
+      // Couleurs par défaut du technicien et règle d'ajout de cases par la personne (listes blanches)
+      palette: PALETTES.indexOf(c.palette) !== -1 ? c.palette : PALETTE_DEFAUT,
+      ajoutParPersonne: AJOUTS.indexOf(c.ajoutParPersonne) !== -1 ? c.ajoutParPersonne : 'libre',
+      // Catalogue des services proposés : null = celui de catalogue.js embarqué
+      catalogue: normaliserCatalogue(c.catalogue),
       domainesOfficiels: listeDomaines(Array.isArray(c.domainesOfficiels) ? c.domainesOfficiels : []),
       raccourcisseurs: listeDomaines(Array.isArray(c.raccourcisseurs) ? c.raccourcisseurs : (Array.isArray(defaut.raccourcisseurs) ? defaut.raccourcisseurs : [])),
       arnaques: listeArnaques(Array.isArray(c.arnaques) ? c.arnaques : (Array.isArray(defaut.arnaques) ? defaut.arnaques : [])),
@@ -479,6 +555,9 @@
   /** Groupe résolu d'une tuile : celui de la config, sinon déduit de l'id. */
   function groupeDe(t) { return t.groupe || GROUPES_PAR_ID[t.id] || ''; }
 
+  // Les liens « Ajouter / Retirer un bouton » survivent aux re-rendus : on garde le nœud
+  var persoActions = null;
+
   function afficherTuiles() {
     var conteneur = $('tuiles');
     vider(conteneur);
@@ -530,10 +609,13 @@
 
     // Regroupement : si aucune tuile n'a de groupe (ni config ni id connu),
     // on rend une seule grille simple, comme avant.
+    // Les cases ajoutées par la personne rejoignent « Mon quotidien », après celles de la config
+    var tous = visibles.concat(tuilesPerso);
+
     var parGroupe = {};
     var noms = [];           // ordre des groupes rencontrés
     var avecGroupe = 0;
-    visibles.forEach(function (t) {
+    tous.forEach(function (t) {
       var g = groupeDe(t);
       if (g) { avecGroupe++; }
       if (!parGroupe[g]) { parGroupe[g] = []; noms.push(g); }
@@ -541,11 +623,21 @@
     });
     var speciales = creerTuilesSpeciales();
 
+    // Liens « Ajouter un bouton » / « Retirer mes boutons » : ni construits ni affichés si la config dit « non »
+    var actions = persoActions || $('perso-actions');
+    if (!persoActions) { persoActions = actions; }
+    var ajoutActif = config.ajoutParPersonne !== 'non';
+    if (actions) {
+      actions.hidden = !ajoutActif;
+      actions.querySelector('#lien-retrait').hidden = !tuilesPerso.length;
+    }
+
     if (!avecGroupe) {
       var grille = el('ul', { 'class': 'tuiles' });
-      visibles.forEach(function (t) { grille.appendChild(creerTuileLien(t)); });
+      tous.forEach(function (t) { grille.appendChild(creerTuileLien(t)); });
       speciales.forEach(function (li) { grille.appendChild(li); });
       conteneur.appendChild(grille);
+      if (actions && ajoutActif) { conteneur.appendChild(actions); }
       $('message-vide').hidden = true;
       return;
     }
@@ -560,14 +652,21 @@
     var aide = ORDRE_GROUPES[ORDRE_GROUPES.length - 1];   // « Aide et sécurité »
     if (speciales.length && noms.indexOf(aide) === -1) { noms.push(aide); parGroupe[aide] = []; }
 
+    // Les liens de personnalisation vivent dans le groupe « Mon quotidien »
+    if (ajoutActif && noms.indexOf(GROUPE_PERSO) === -1) {
+      noms.push(GROUPE_PERSO);
+      parGroupe[GROUPE_PERSO] = [];
+    }
+
     noms.forEach(function (nom) {
       var grille = el('ul', { 'class': 'tuiles' });
       (parGroupe[nom] || []).forEach(function (t) { grille.appendChild(creerTuileLien(t)); });
       if (nom === aide) { speciales.forEach(function (li) { grille.appendChild(li); }); }
-      if (!grille.childNodes.length) { return; }
+      if (!grille.childNodes.length && !(nom === GROUPE_PERSO && ajoutActif)) { return; }
       var section = el('section', { 'class': 'groupe' });
       section.appendChild(el('h2', { 'class': 'groupe-titre', text: nom || GROUPE_AUTRES }));
-      section.appendChild(grille);
+      if (grille.childNodes.length) { section.appendChild(grille); }
+      if (nom === GROUPE_PERSO && actions && ajoutActif) { section.appendChild(actions); }
       conteneur.appendChild(section);
     });
     $('message-vide').hidden = true;
@@ -581,7 +680,8 @@
   function lireCompteur(cle) { var n = parseInt(lireStockage(cle), 10); return isNaN(n) || n < 0 ? 0 : n; }
   function incrementerCompteur(cle) { ecrireStockage(cle, String(lireCompteur(cle) + 1)); }
   function lireStatistiques() {
-    return { verifications: lireCompteur(CLE_STAT_VERIFICATIONS), rouges: lireCompteur(CLE_STAT_ROUGES) };
+    return { verifications: lireCompteur(CLE_STAT_VERIFICATIONS), rouges: lireCompteur(CLE_STAT_ROUGES),
+      refus: lireCompteur(CLE_STAT_REFUS) };
   }
 
   /** Remplit la liste des arnaques et le lien d'appel (à chaque changement de configuration). */
@@ -610,7 +710,7 @@
     var zone = $('verif-resultat');
     vider(zone);
     zone.className = 'verif-resultat';
-    var r = window.MONACCUEIL_VERIF.verifierAdresse($('champ-adresse').value, config.domainesOfficiels, config.raccourcisseurs);
+    var r = window.MONACCUEIL_VERIF.verifierAdresse($('champ-adresse').value, domainesReconnus(), config.raccourcisseurs);
     if (r.verdict === 'vide') {
       zone.appendChild(el('p', { 'class': 'verdict', text: 'Collez d\'abord une adresse dans le champ ci-dessus.' }));
       return;
@@ -689,6 +789,9 @@
     var t = parseInt(lireStockage(CLE_TAILLE), 10);
     appliquerTaille(isNaN(t) ? 1 : t);
     appliquerContraste(lireStockage(CLE_CONTRASTE) === '1');
+    // Palette choisie par la personne, appliquée avant le premier affichage (pas de clignotement)
+    paletteChoisie = lireStockage(CLE_PALETTE) || '';
+    appliquerPalette(paletteEffective());
     $('btn-taille-moins').addEventListener('click', function () { appliquerTaille(taille - 1); });
     $('btn-taille-plus').addEventListener('click', function () { appliquerTaille(taille + 1); });
     $('btn-contraste').addEventListener('click', function () {
@@ -787,6 +890,24 @@
     $('champ-pin').focus();
   }
 
+  /**
+   * Vérification du code PIN, partagée entre le mode technicien et l'ajout
+   * d'un site inconnu : même hachage, et le même ralentissement progressif
+   * après chaque mauvaise réponse (1,5 s puis 3 s, 4,5 s… plafonné à 9 s).
+   * ok() en cas de bon code, ko() sinon.
+   */
+  function verifierPin(saisie, ok, ko) {
+    sha256(saisie).then(function (hash) {
+      if (config.pinHash && hash === config.pinHash) {
+        echecsPin = 0;
+        ok();
+      } else {
+        echecsPin++;
+        setTimeout(ko, Math.min(1500 * echecsPin, 9000));
+      }
+    });
+  }
+
   function initPin() {
     var d = $('dialog-pin');
     $('btn-pin-annuler').addEventListener('click', function () { fermerDialog(d); });
@@ -794,16 +915,273 @@
       ev.preventDefault();
       var saisie = $('champ-pin').value;
       if (!/^[0-9]{4}$/.test(saisie)) { $('pin-erreur').textContent = 'Saisissez 4 chiffres.'; return; }
-      sha256(saisie).then(function (hash) {
-        if (config.pinHash && hash === config.pinHash) {
-          fermerDialog(d);
-          ouvrirModeTech();
-        } else {
-          $('pin-erreur').textContent = 'Code incorrect.';
-          $('champ-pin').value = '';
-          $('champ-pin').focus();
+      verifierPin(saisie, function () {
+        fermerDialog(d);
+        ouvrirModeTech();
+      }, function () {
+        $('pin-erreur').textContent = 'Code incorrect.';
+        $('champ-pin').value = '';
+        $('champ-pin').focus();
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Personnalisation par la personne : couleurs et cases ajoutées.
+     Tout reste local (localStorage, try/catch), rien n'est envoyé.
+     ------------------------------------------------------------------ */
+
+  /** Palette effective : choix de la personne, sinon celui de la config, sinon le défaut. */
+  function paletteEffective() {
+    var locale = paletteChoisie;
+    return PALETTES.indexOf(locale) !== -1 ? locale : (config ? config.palette : PALETTE_DEFAUT);
+  }
+
+  /** Applique la palette au document. Le mode contraste élevé la recouvre toujours (ordre CSS). */
+  function appliquerPalette(nom) {
+    var html = document.documentElement;
+    PALETTES.forEach(function (p) { html.classList.remove('palette-' + p); });
+    if (nom !== PALETTE_DEFAUT && PALETTES.indexOf(nom) !== -1) { html.classList.add('palette-' + nom); }
+  }
+
+  function choisirPalette(nom) {
+    paletteChoisie = PALETTES.indexOf(nom) === -1 ? '' : nom;
+    ecrireStockage(CLE_PALETTE, paletteChoisie || null);   // null = retour à la config/défaut
+    appliquerPalette(paletteEffective());
+    marquerPaletteCourante();
+  }
+
+  function marquerPaletteCourante() {
+    var courante = paletteEffective();
+    var liste = $('liste-palettes');
+    if (!liste) { return; }
+    Array.prototype.forEach.call(liste.children, function (carte) {
+      carte.setAttribute('aria-pressed', carte.getAttribute('data-palette') === courante ? 'true' : 'false');
+    });
+  }
+
+  function initPalette() {
+    var d = $('dialog-palette');
+    var liste = $('liste-palettes');
+    PALETTES.forEach(function (nom) {
+      // Chaque carte porte la classe de sa palette : ses propres variables CSS la décorent
+      var carte = el('button', { type: 'button', 'class': 'palette-carte palette-' + nom,
+        'data-palette': nom, 'aria-pressed': 'false' }, [
+        el('span', { 'class': 'palette-apercu' }, [
+          el('span', { 'class': 'palette-pastille' }),
+          el('span', { 'class': 'palette-ligne' }),
+          el('span', { 'class': 'palette-ligne palette-ligne-courte' })
+        ]),
+        el('span', { 'class': 'palette-nom', text: NOMS_PALETTES[nom] })
+      ]);
+      carte.addEventListener('click', function () { choisirPalette(nom); });
+      liste.appendChild(carte);
+    });
+    $('lien-palette').addEventListener('click', function () { marquerPaletteCourante(); ouvrirDialog(d); $('btn-fermer-palette').focus(); });
+    $('btn-fermer-palette').addEventListener('click', function () { fermerDialog(d); $('lien-palette').focus(); });
+    $('btn-palette-defaut').addEventListener('click', function () { choisirPalette(''); });
+  }
+
+  /** Lit les cases ajoutées par la personne (stockage local, entrées invalides ignorées). */
+  function chargerPerso() {
+    try {
+      var brut = lireStockage(CLE_PERSO);
+      tuilesPerso = normaliserPerso(brut ? JSON.parse(brut) : []);
+    } catch (e) { tuilesPerso = []; }
+  }
+
+  function sauvegarderPerso() {
+    var liste = tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; });
+    return ecrireStockage(CLE_PERSO, JSON.stringify(liste));
+  }
+
+  /** Vrai si cette adresse existe déjà (config ou cases ajoutées). */
+  function adresseDejaPrise(url) {
+    var cle = url.trim().toLowerCase().replace(/\/+$/, '');
+    return config.tuiles.concat(tuilesPerso).some(function (t) {
+      return t.url.toLowerCase().replace(/\/+$/, '') === cle;
+    });
+  }
+
+  function ajouterPerso(label, url, icone) {
+    if (tuilesPerso.length >= MAX_PERSO) { return 'maximum'; }
+    if (adresseDejaPrise(url)) { return 'doublon'; }
+    tuilesPerso.push({ id: 'perso-' + Date.now(), label: label.trim(), url: url.trim(),
+      icone: iconeValide(icone) ? icone : ICONE_DEFAUT, couleur: '', groupe: GROUPE_PERSO });
+    sauvegarderPerso();
+    afficherTuiles();
+    return '';
+  }
+
+  function retirerPerso(id) {
+    tuilesPerso = tuilesPerso.filter(function (t) { return t.id !== id; });
+    sauvegarderPerso();
+    afficherTuiles();
+  }
+
+  /* ---------- Dialog « Ajouter un bouton » ---------- */
+
+  var iconePersoSelectionnee = ICONE_DEFAUT;
+
+  /** Remplit la grille de grosses vignettes d'icônes (liste blanche existante). */
+  function remplirIcones() {
+    var zone = $('liste-icones');
+    vider(zone);
+    ICONES.forEach(function (nom) {
+      var b = el('button', { type: 'button', 'class': 'icone-vignette', role: 'radio',
+        'aria-checked': nom === iconePersoSelectionnee ? 'true' : 'false',
+        'aria-label': nom.replace('.svg', ''), 'data-icone': nom }, [creerIcone(nom, null)]);
+      if (nom === iconePersoSelectionnee) { b.classList.add('choisie'); }
+      b.addEventListener('click', function () {
+        iconePersoSelectionnee = nom;
+        remplirIcones();
+      });
+      zone.appendChild(b);
+    });
+  }
+
+  function afficherZoneLibre(afficher) {
+    $('ajout-zone-catalogue').hidden = afficher;
+    $('ajout-zone-libre').hidden = !afficher;
+    // « Fermer » reste visible dans les deux étapes : on ne piège jamais la personne
+    if (afficher) { remplirIcones(); $('ajout-url').focus(); }
+  }
+
+  function erreurAjout(message) {
+    $('ajout-erreur').textContent = message;
+  }
+
+  /** Ajoute la case et referme le dialog ; message en cas de refus (doublon, maximum). */
+  function conclureAjout(label, url, icone) {
+    var refus = ajouterPerso(label, url, icone);
+    if (refus === 'maximum') {
+      erreurAjout('Il y a déjà ' + MAX_PERSO + ' boutons ajoutés. Retirez-en un d\'abord (lien « Retirer mes boutons »).');
+      return;
+    }
+    if (refus === 'doublon') {
+      erreurAjout('Ce bouton existe déjà sur votre accueil.');
+      return;
+    }
+    fermerDialog($('dialog-ajout'));
+    afficherZoneLibre(false);
+    $('ajout-url').value = '';
+    $('ajout-nom').value = '';
+    $('ajout-pin').hidden = true;
+    var tuiles = document.querySelectorAll('.tuile');
+    if (tuiles.length) { tuiles[tuiles.length - 1].focus(); }
+  }
+
+  /** Vérifie l'adresse saisie : reconnue → ajout ; inconnue → PIN du technicien exigé. */
+  function tenterAjout() {
+    var url = $('ajout-url').value.trim();
+    var nom = $('ajout-nom').value.trim();
+    var a = analyserUrl(url);
+    if (!a.ok) {
+      erreurAjout(a.vide ? 'Collez d\'abord l\'adresse du site.' : (a.erreur || 'Cette adresse n\'est pas lisible.') + ' Elle doit commencer par https://');
+      $('ajout-url').focus();
+      return;
+    }
+    if (!nomBoutonValide(nom)) {
+      erreurAjout('Le nom du bouton doit faire 1 à 24 caractères : lettres, chiffres, espaces, tiret ou apostrophe.');
+      $('ajout-nom').focus();
+      return;
+    }
+    if (adresseDejaPrise(url)) {
+      erreurAjout('Ce bouton existe déjà sur votre accueil.');
+      return;
+    }
+    if (tuilesPerso.length >= MAX_PERSO) {
+      erreurAjout('Il y a déjà ' + MAX_PERSO + ' boutons ajoutés. Retirez-en un d\'abord.');
+      return;
+    }
+    var r = window.MONACCUEIL_VERIF.verifierAdresse(url, domainesReconnus(), config.raccourcisseurs);
+    if (r.verdict === 'vert') {
+      conclureAjout(nom, url, iconePersoSelectionnee);
+      return;
+    }
+    // Adresse inconnue ou suspecte : ajout refusé tant que le technicien n'a pas saisi son PIN
+    incrementerCompteur(CLE_STAT_REFUS);
+    erreurAjout('Ce site n\'est pas dans la liste de confiance. Appelez-moi avant de l\'ajouter.');
+    $('ajout-pin').hidden = false;
+    $('champ-pin-ajout').value = '';
+    $('champ-pin-ajout').focus();
+  }
+
+  function initAjout() {
+    var d = $('dialog-ajout');
+    // Étape A : le catalogue en un clic (ses domaines sont reconnus par le vérificateur)
+    var liste = $('liste-catalogue');
+    catalogue().forEach(function (s) {
+      var b = el('button', { type: 'button', 'class': 'catalogue-carte' }, [
+        creerIcone(s.icone, null),
+        el('span', { 'class': 'catalogue-nom', text: s.label })
+      ]);
+      b.addEventListener('click', function () { conclureAjout(s.label, s.url, s.icone); });
+      liste.appendChild(b);
+    });
+    $('lien-autre-site').hidden = config.ajoutParPersonne !== 'libre';
+    $('lien-autre-site').addEventListener('click', function () { afficherZoneLibre(true); });
+    $('btn-ajout-retour').addEventListener('click', function () { afficherZoneLibre(false); erreurAjout(''); });
+    $('btn-ajouter').addEventListener('click', tenterAjout);
+    // PIN du technicien pour un domaine inconnu : même mécanisme que le mode technicien
+    $('btn-ajout-pin').addEventListener('click', function () {
+      var saisie = $('champ-pin-ajout').value;
+      if (!/^[0-9]{4}$/.test(saisie)) { erreurAjout('Saisissez les 4 chiffres du code.'); return; }
+      verifierPin(saisie, function () {
+        conclureAjout($('ajout-nom').value.trim(), $('ajout-url').value.trim(), iconePersoSelectionnee);
+      }, function () {
+        $('champ-pin-ajout').value = '';
+        erreurAjout('Code incorrect. Appelez-moi.');
+        $('champ-pin-ajout').focus();
+      });
+    });
+    $('lien-ajout').addEventListener('click', function () {
+      if (tuilesPerso.length >= MAX_PERSO) {
+        window.alert('Vous avez déjà ' + MAX_PERSO + ' boutons ajoutés. Retirez-en un d\'abord (lien « Retirer mes boutons »).');
+        return;
+      }
+      afficherZoneLibre(false);
+      erreurAjout('');
+      ouvrirDialog(d);
+      $('btn-fermer-ajout').focus();
+    });
+    $('btn-fermer-ajout').addEventListener('click', function () {
+      fermerDialog(d);
+      afficherZoneLibre(false);
+      if (persoActions) { persoActions.querySelector('#lien-ajout').focus(); }
+    });
+  }
+
+  function ouvrirRetrait() {
+    var d = $('dialog-retrait');
+    var liste = $('liste-retrait');
+    vider(liste);
+    if (!tuilesPerso.length) {
+      liste.appendChild(el('li', { text: 'Aucun bouton ajouté pour le moment.' }));
+    }
+    tuilesPerso.forEach(function (t) {
+      var retirer = el('button', { type: 'button', 'class': 'bouton', text: 'Retirer' });
+      retirer.addEventListener('click', function () {
+        if (window.confirm('Retirer le bouton « ' + t.label + ' » ?')) {
+          retirerPerso(t.id);
+          ouvrirRetrait();  // liste rafraîchie dans le même dialog
         }
       });
+      liste.appendChild(el('li', null, [
+        creerIcone(t.icone, null),
+        el('span', { 'class': 'retrait-nom', text: t.label }),
+        retirer
+      ]));
+    });
+    ouvrirDialog(d);
+    $('btn-fermer-retrait').focus();
+  }
+
+  function initRetrait() {
+    $('lien-retrait').addEventListener('click', ouvrirRetrait);
+    $('btn-fermer-retrait').addEventListener('click', function () {
+      fermerDialog($('dialog-retrait'));
+      if (persoActions && tuilesPerso.length) { persoActions.querySelector('#lien-retrait').focus(); }
     });
   }
 
@@ -848,6 +1226,8 @@
     brouillon.aideDistance.outil = p.querySelector('[name="distance-outil"]').value;
     brouillon.aideDistance.idRustdesk = p.querySelector('[name="distance-id"]').value.replace(/[^0-9]/g, '');
     brouillon.ouvertureSites = p.querySelector('[name="ouverture-sites"]').value;
+    brouillon.palette = p.querySelector('[name="palette-defaut"]').value;
+    brouillon.ajoutParPersonne = p.querySelector('[name="ajout-personne"]').value;
     brouillon.domainesOfficiels = lireListeTexte(p.querySelector('[name="domaines"]').value);
     brouillon.raccourcisseurs = lireListeTexte(p.querySelector('[name="raccourcisseurs"]').value);
     brouillon.arnaques = Array.prototype.map.call(p.querySelectorAll('.carte-arnaque'), function (carte) {
@@ -874,6 +1254,8 @@
     }
     if (!brouillon.technicien.telephone) { erreurs.push('Le numéro de téléphone du technicien est vide.'); }
     if (OUVERTURES.indexOf(brouillon.ouvertureSites) === -1) { brouillon.ouvertureSites = 'fenetre'; }
+    if (PALETTES.indexOf(brouillon.palette) === -1) { brouillon.palette = PALETTE_DEFAUT; }
+    if (AJOUTS.indexOf(brouillon.ajoutParPersonne) === -1) { brouillon.ajoutParPersonne = 'libre'; }
     if (OUTILS_DISTANCE.indexOf(brouillon.aideDistance.outil) === -1) { brouillon.aideDistance.outil = 'quickassist'; }
     if (brouillon.aideDistance.actif && brouillon.aideDistance.outil === 'rustdesk' && !brouillon.aideDistance.idRustdesk) {
       avertissements.push('Aide à distance : l\'identifiant RustDesk du poste est vide (facultatif, mais pratique pour vous).');
@@ -954,9 +1336,14 @@
       afficherMessagesTech(['Export impossible. Corrigez :'].concat(v.erreurs), 'liste-erreurs');
       return;
     }
-    // Les deux compteurs anonymes sont joints dans une section à part (ignorée à l'import)
+    // Les compteurs anonymes et la personnalisation locale sont joints dans des sections à part
     var exporte = copieProfonde(brouillon);
     exporte.statistiques = lireStatistiques();
+    // Section séparée, jamais mélangée à « tuiles » : restaurée dans localStorage à l'import
+    exporte.personnalisation = {
+      palette: paletteChoisie,
+      tuiles: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; })
+    };
     var json = JSON.stringify(exporte, null, 2) + '\n';
     telechargerFichier('config.json', json, 'application/json');
     // Le second téléchargement est légèrement différé pour que les navigateurs l'acceptent
@@ -966,7 +1353,12 @@
 
   /** Télécharge uniquement config.json (la configuration appliquée) pour la ranger chez le client. */
   function sauvegarderConfig() {
-    telechargerFichier('config.json', JSON.stringify(config, null, 2) + '\n', 'application/json');
+    var copie = copieProfonde(config);
+    copie.personnalisation = {
+      palette: paletteChoisie,
+      tuiles: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; })
+    };
+    telechargerFichier('config.json', JSON.stringify(copie, null, 2) + '\n', 'application/json');
     afficherMessagesTech(['Sauvegarde téléchargée : rangez ce config.json dans le dossier MonAccueil du client.'], 'confirmation');
   }
 
@@ -984,8 +1376,25 @@
         var nouveau = normaliserConfig(brut);
         if (!nouveau.pinHash) { nouveau.pinHash = brouillon.pinHash; }
         brouillon = nouveau;
+        // Section « personnalisation » : revalidée par le même schéma strict, jamais dans « tuiles »
+        var notes = [];
+        if (brut.personnalisation && typeof brut.personnalisation === 'object') {
+          var p2 = brut.personnalisation;
+          if (PALETTES.indexOf(p2.palette) !== -1) {
+            paletteChoisie = p2.palette;
+            ecrireStockage(CLE_PALETTE, p2.palette);
+            appliquerPalette(paletteEffective());
+            notes.push('Couleurs de la personne restaurées : ' + NOMS_PALETTES[p2.palette] + '.');
+          }
+          if (Array.isArray(p2.tuiles)) {
+            tuilesPerso = normaliserPerso(p2.tuiles);
+            sauvegarderPerso();
+            afficherTuiles();
+            notes.push('Boutons de la personne restaurés : ' + tuilesPerso.length + '.');
+          }
+        }
         rendrePanneauTech();
-        afficherMessagesTech(['Configuration importée. Vérifiez puis cliquez sur « Enregistrer et appliquer ».'], 'confirmation');
+        afficherMessagesTech(['Configuration importée. Vérifiez puis cliquez sur « Enregistrer et appliquer ».'].concat(notes), 'confirmation');
       } catch (e) {
         afficherMessagesTech(['Fichier illisible : ce n\'est pas une configuration MonAccueil valide.'], 'liste-erreurs');
       }
@@ -1243,6 +1652,52 @@
     p.appendChild(el('div', { 'class': 'champs' }, [
       el('label', { 'for': 'tech-ouverture' }, ['Quand on clique un bouton, le site s\'ouvre', selOuverture])]));
 
+    // Couleurs par défaut et règle d'ajout de boutons par la personne
+    var selPalette = el('select', { id: 'tech-palette', name: 'palette-defaut' });
+    PALETTES.forEach(function (nom) {
+      var opt = el('option', { value: nom, text: NOMS_PALETTES[nom] + (nom === PALETTE_DEFAUT ? ' (couleurs d\'origine)' : '') });
+      if (nom === brouillon.palette) { opt.selected = true; }
+      selPalette.appendChild(opt);
+    });
+    var selAjout = el('select', { id: 'tech-ajout', name: 'ajout-personne' });
+    [['catalogue', 'Oui, uniquement dans la liste proposée — recommandé'],
+     ['libre', 'Oui, y compris une autre adresse (votre code exigé si elle est inconnue)'],
+     ['non', 'Non, jamais']].forEach(function (o) {
+      var opt = el('option', { value: o[0], text: o[1] });
+      if (o[0] === brouillon.ajoutParPersonne) { opt.selected = true; }
+      selAjout.appendChild(opt);
+    });
+    p.appendChild(el('div', { 'class': 'champs' }, [
+      el('label', { 'for': 'tech-palette' }, ['Couleurs proposées par défaut', selPalette]),
+      el('label', { 'for': 'tech-ajout' }, ['La personne peut ajouter des boutons', selAjout])]));
+
+    // Personnalisation locale de la personne (lecture seule) : couleurs et cases ajoutées
+    p.appendChild(el('h3', { text: 'Personnalisation de la personne' }));
+    var lignesPerso = [el('p', { 'class': 'discret', text: 'Couleurs choisies sur ce PC : ' + (paletteChoisie ? NOMS_PALETTES[paletteChoisie] : 'aucune (celles de la config)') + '.' })];
+    if (tuilesPerso.length) {
+      var ulPerso = el('ul');
+      tuilesPerso.forEach(function (t) { ulPerso.appendChild(el('li', { text: t.label + ' — ' + t.url })); });
+      lignesPerso.push(el('p', { 'class': 'discret', text: 'Boutons ajoutés par la personne (' + tuilesPerso.length + ') :' }));
+      lignesPerso.push(ulPerso);
+    } else {
+      lignesPerso.push(el('p', { 'class': 'discret', text: 'Boutons ajoutés par la personne : aucun.' }));
+    }
+    lignesPerso.forEach(function (n) { p.appendChild(n); });
+    var btnEffacerPerso = el('button', { type: 'button', 'class': 'bouton', text: 'Effacer la personnalisation' });
+    btnEffacerPerso.addEventListener('click', function () {
+      if (!window.confirm('Effacer les couleurs choisies et les boutons ajoutés par la personne ?')) { return; }
+      ecrireStockage(CLE_PALETTE, null);
+      ecrireStockage(CLE_PERSO, null);
+      paletteChoisie = '';
+      tuilesPerso = [];
+      appliquerPalette(paletteEffective());
+      afficherTuiles();
+      afficherMessagesTech(['Personnalisation effacée : couleurs d\'origine et boutons ajoutés retirés.'], 'confirmation');
+      rendrePanneauTech();
+    });
+    btnEffacerPerso.disabled = !paletteChoisie && !tuilesPerso.length;
+    p.appendChild(el('div', { 'class': 'barre' }, [btnEffacerPerso]));
+
     // Aide à distance
     p.appendChild(el('h3', { text: 'Aide à distance' }));
     p.appendChild(el('p', { text: 'Le client vous appelle, lance le raccourci Bureau « Aide à distance » et accepte la connexion. Aucun accès caché ni permanent. Le raccourci lit ce réglage dans config.json : exportez après modification.' }));
@@ -1290,7 +1745,8 @@
     p.appendChild(el('h3', { text: 'Tuile « Un message me paraît bizarre »' }));
     var stats = lireStatistiques();
     p.appendChild(el('p', { text: 'Statistiques sur cet ordinateur (aucune adresse n\'est conservée) : ' + stats.verifications +
-      ' vérification(s) d\'adresse, dont ' + stats.rouges + ' résultat(s) rouge(s). Elles sont jointes à l\'export dans la section « statistiques ».' }));
+      ' vérification(s) d\'adresse, dont ' + stats.rouges + ' résultat(s) rouge(s), et ' + stats.refus +
+      ' ajout(s) de bouton refusé(s) par le vérificateur. Elles sont jointes à l\'export dans la section « statistiques ».' }));
     p.appendChild(el('h4', { text: 'Arnaques du moment (' + brouillon.arnaques.length + ')' }));
     p.appendChild(el('p', { text: 'Un titre et deux phrases maximum par arnaque, en langage simple. Mettez à jour la liste à chaque visite.' }));
     var conteneurArnaques = el('div');
@@ -1643,15 +2099,24 @@
     majHorloge();
     setInterval(majHorloge, 1000);
     chargerPrenomChoisi();
+    chargerPerso();
     initAide();
     initBizarre();
     initInstall();
     initRetour();
     initPrenom();
+    initPalette();
     chargerConfig().then(function (c) {
       config = c;
+      appliquerPalette(paletteEffective());   // la palette de la config s'applique si la personne n'a rien choisi
       afficherEntete();
       afficherTuiles();
+      // Ajout de cases par la personne : ni lien ni dialog ne sont construits quand la config dit « non »
+      if (config.ajoutParPersonne === 'non') {
+        var dAjout = $('dialog-ajout'), dRetrait = $('dialog-retrait');
+        if (dAjout) { dAjout.remove(); }
+        if (dRetrait) { dRetrait.remove(); }
+      } else { initAjout(); initRetrait(); }
       // Premier lancement : demander le prénom seulement si ni choisi ni configuré,
       // et pas déjà repoussé à « plus tard »
       if (!prenomEffectif() && lireStockage(CLE_PRENOM_PLUSTARD) !== '1') { ouvrirPrenom(); }

@@ -129,6 +129,24 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   `window.open` fonctionnent toujours. Sécurité : `w.opener` est coupé
   immédiatement (l'isolation `noopener` est préservée ; sans elle, la fenêtre
   nommée ne pourrait pas être réutilisée).
+- `palette` *(facultatif)* : couleurs par défaut parmi `chaleureux` (défaut),
+  `bleu`, `vert`, `violet`, `rose`, `gris`. La personne peut en choisir une
+  autre via le lien « Changer les couleurs » (stockée dans `localStorage`,
+  clé `monaccueil.palette`, prioritaire sur la config, jamais écrasée par une
+  valeur invalide). Le mode contraste élevé ignore toujours la palette.
+- `ajoutParPersonne` : `"catalogue"` (liste proposée seule), `"libre"`
+  (défaut : catalogue + adresse libre, code PIN exigé si le domaine est
+  inconnu) ou `"non"` (aucun lien, aucun dialog construit). Les cases ajoutées
+  sont stockées dans `localStorage` (clé `monaccueil.perso`), affichées dans
+  « Mon quotidien » après les cases de la config, limitées à 8, validées par
+  le même schéma strict (https obligatoire, doublons refusés, icône en liste
+  blanche, nom de 1 à 24 caractères). « Retirer mes boutons » ne touche que
+  ces cases-là. Le catalogue est dans `catalogue.js` (ou remplacé par la clé
+  `catalogue` de la config : même format que `tuiles` sans `couleur` ni
+  `groupe`) ; ses domaines sont automatiquement reconnus par le vérificateur.
+  L'export inclut une section séparée `personnalisation` (palette + cases),
+  restaurée dans `localStorage` à l'import après revalidation — jamais
+  mélangée à `tuiles`.
 - `domainesOfficiels` : liste de domaines « connus ». Toute URL hors liste déclenche
   un avertissement en mode technicien (elle reste autorisée). Ajoutez-y la banque
   et la messagerie du client. **C'est aussi la liste de référence de la tuile
