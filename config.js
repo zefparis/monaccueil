@@ -94,49 +94,49 @@ window.MONACCUEIL_CONFIG = {
   "tuiles": [
     {
       "id": "impots",
-      "label": "Mes impôts",
+      "label": "Impôts",
       "url": "https://www.impots.gouv.fr",
       "icone": "impots.svg",
       "couleur": "#1d4ed8"
     },
     {
       "id": "sante",
-      "label": "Ma santé (Ameli)",
+      "label": "Santé (Ameli)",
       "url": "https://www.ameli.fr",
       "icone": "sante.svg",
       "couleur": "#b91c1c"
     },
     {
       "id": "caf",
-      "label": "Mes allocations (CAF)",
+      "label": "Allocations",
       "url": "https://www.caf.fr",
       "icone": "famille.svg",
       "couleur": "#0f766e"
     },
     {
       "id": "retraite",
-      "label": "Ma retraite",
+      "label": "Retraite",
       "url": "https://www.lassuranceretraite.fr",
       "icone": "retraite.svg",
       "couleur": "#6d28d9"
     },
     {
       "id": "administration",
-      "label": "Démarches administratives",
+      "label": "Démarches",
       "url": "https://www.service-public.fr",
       "icone": "administration.svg",
       "couleur": "#374151"
     },
     {
       "id": "medecin",
-      "label": "Rendez-vous médecin",
+      "label": "Médecin",
       "url": "https://www.doctolib.fr",
       "icone": "medecin.svg",
       "couleur": "#0e7490"
     },
     {
       "id": "courrier",
-      "label": "Mon courrier (La Poste)",
+      "label": "Courrier",
       "url": "https://www.laposte.fr",
       "icone": "courrier.svg",
       "couleur": "#a16207"
@@ -150,28 +150,28 @@ window.MONACCUEIL_CONFIG = {
     },
     {
       "id": "banque",
-      "label": "Ma banque",
+      "label": "Banque",
       "url": "",
       "icone": "banque.svg",
       "couleur": "#15803d"
     },
     {
       "id": "mails",
-      "label": "Mes mails",
+      "label": "Mails",
       "url": "",
       "icone": "mails.svg",
       "couleur": "#c2410c"
     },
     {
       "id": "photos",
-      "label": "Photos de la famille",
+      "label": "Photos",
       "url": "",
       "icone": "photos.svg",
       "couleur": "#be185d"
     },
     {
       "id": "meteo",
-      "label": "La météo",
+      "label": "Météo",
       "url": "https://meteofrance.com",
       "icone": "meteo.svg",
       "couleur": "#0369a1"

@@ -92,18 +92,23 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
     { "titre": "Le faux colis à régler", "texte": "Un SMS dit qu'un colis attend… (2 phrases max)" }
   ],
   "tuiles": [
-    { "id": "impots", "label": "Mes impôts", "url": "https://www.impots.gouv.fr",
+    { "id": "impots", "label": "Impôts", "url": "https://www.impots.gouv.fr",
       "icone": "impots.svg", "couleur": "#1d4ed8" }
   ]
 }
 ```
 
 - `url` : doit commencer par `https://`. **Une tuile dont l'URL est vide n'est pas
-  affichée** (c'est le cas par défaut de « Ma banque », « Mes mails », « Photos »).
+  affichée** (c'est le cas par défaut de « Banque », « Mails », « Photos »).
 - `icone` : un nom parmi `impots.svg, sante.svg, famille.svg, retraite.svg,
   administration.svg, medecin.svg, courrier.svg, banque.svg, mails.svg, photos.svg,
   meteo.svg, cle.svg, aide.svg, telephone.svg, bouclier.svg`.
-- `couleur` : code hexadécimal à 6 chiffres. Choisissez des couleurs foncées.
+- `couleur` : code hexadécimal à 6 chiffres. Choisissez des couleurs foncées
+  (elle teinte la pastille d'icône et la bordure au survol).
+- `groupe` *(facultatif)* : famille affichée au-dessus de la tuile —
+  « Mes démarches », « Ma santé », « Mon quotidien » ou « Aide et sécurité »
+  (choix dans le panneau technicien). Vide ou absent = déduit de l'`id` ;
+  si aucune tuile n'a de groupe, la page rend une grille simple sans titres.
 - `prenom` : prénom affiché après « Bonjour » ; laissez vide pour que la
   personne choisisse elle-même au premier lancement. **Priorité d'affichage** :
   prénom choisi par la personne (`localStorage`, clé `monaccueil.prenom`,

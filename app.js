@@ -49,6 +49,21 @@
   var REGEX_PRENOM = /^[\p{L}][\p{L} '\-]*$/u;
   var LONGUEUR_MAX_PRENOM = 30;
 
+  // Familles de tuiles : ordre d'affichage et groupe déduit de l'id quand la
+  // config ne précise rien. « Aide et sécurité » accueille les tuiles fixes.
+  var ORDRE_GROUPES = ['Mes démarches', 'Ma santé', 'Mon quotidien', 'Aide et sécurité'];
+  var GROUPES_PAR_ID = {
+    impots: 'Mes démarches', caf: 'Mes démarches', retraite: 'Mes démarches',
+    administration: 'Mes démarches', franceconnect: 'Mes démarches',
+    sante: 'Ma santé', medecin: 'Ma santé',
+    courrier: 'Mon quotidien', banque: 'Mon quotidien', mails: 'Mon quotidien',
+    photos: 'Mon quotidien', meteo: 'Mon quotidien'
+  };
+  var GROUPE_AUTRES = 'Autres';
+  // Groupe de tuile : lettres, chiffres, espaces, apostrophe, tiret ; 40 caractères max ; vide = automatique
+  var REGEX_GROUPE = /^[\p{L}\p{N} '\-]+$/u;
+  var LONGUEUR_MAX_GROUPE = 40;
+
   var DUREE_APPUI_LONG = 3000; // ms
 
   // Configuration active et brouillon du mode technicien
@@ -245,7 +260,8 @@
           label: typeof t.label === 'string' ? t.label.trim() : '',
           url: typeof t.url === 'string' ? t.url.trim() : '',
           icone: iconeValide(t.icone) ? t.icone : ICONE_DEFAUT,
-          couleur: couleurValide(t.couleur) ? t.couleur.toLowerCase() : COULEUR_DEFAUT
+          couleur: couleurValide(t.couleur) ? t.couleur.toLowerCase() : COULEUR_DEFAUT,
+          groupe: groupeValide(t.groupe) ? t.groupe.trim() : ''
         };
       })
     };
@@ -332,6 +348,7 @@
   var prenomChoisi = '';
 
   function prenomValide(p) { return typeof p === 'string' && p.length <= LONGUEUR_MAX_PRENOM && REGEX_PRENOM.test(p); }
+  function groupeValide(g) { return typeof g === 'string' && g.trim().length <= LONGUEUR_MAX_GROUPE && (!g.trim() || REGEX_GROUPE.test(g.trim())); }
   function prenomEffectif() { return prenomChoisi ? majusculeInitiale(prenomChoisi) : config.prenom; }
 
   function chargerPrenomChoisi() {
@@ -459,11 +476,16 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { masquerRetour(); } });
   }
 
+  /** Groupe résolu d'une tuile : celui de la config, sinon déduit de l'id. */
+  function groupeDe(t) { return t.groupe || GROUPES_PAR_ID[t.id] || ''; }
+
   function afficherTuiles() {
-    var liste = $('tuiles');
-    vider(liste);
+    var conteneur = $('tuiles');
+    vider(conteneur);
     var visibles = config.tuiles.filter(function (t) { return analyserUrl(t.url).ok; });
-    visibles.forEach(function (t) {
+
+    // Une tuile = vrai lien enrichi (clic droit, clavier, repli en onglet natif)
+    function creerTuileLien(t) {
       var lien = el('a', {
         'class': 'tuile',
         href: t.url,
@@ -479,26 +501,75 @@
         if (ouvrirSite(t.url)) { ev.preventDefault(); afficherRetour('fenetre'); }
         else { afficherRetour('onglet'); }  // bloqué ou écran étroit : le lien target=_blank fait le travail
       });
-      liste.appendChild(el('li', null, [lien]));
-    });
-    // Tuile fixe "Aide à distance" : ouvre une fenêtre d'explications, pas un site
-    if (config.aideDistance.actif) {
-      var bouton = el('button', { type: 'button', 'class': 'tuile tuile-distance' }, [
-        creerIcone('assistance.svg', COULEUR_DISTANCE),
-        el('span', { 'class': 'tuile-label', text: 'Aide à distance' })
-      ]);
-      bouton.style.setProperty('--couleur', COULEUR_DISTANCE);
-      bouton.addEventListener('click', function () { ouvrirDialog($('dialog-distance')); $('btn-fermer-distance').focus(); });
-      liste.appendChild(el('li', null, [bouton]));
+      return el('li', null, [lien]);
     }
-    // Tuile fixe "Un message me paraît bizarre" : conseils et vérification 100 % locale, toujours présente
-    var bizarre = el('button', { type: 'button', 'class': 'tuile tuile-bizarre' }, [
-      creerIcone('bouclier.svg', COULEUR_BIZARRE),
-      el('span', { 'class': 'tuile-label', text: 'Un message me paraît bizarre' })
-    ]);
-    bizarre.style.setProperty('--couleur', COULEUR_BIZARRE);
-    bizarre.addEventListener('click', function () { ouvrirDialog($('dialog-bizarre')); $('champ-adresse').focus(); });
-    liste.appendChild(el('li', null, [bizarre]));
+
+    // Les deux tuiles fixes finissent dans « Aide et sécurité »
+    function creerTuilesSpeciales() {
+      var items = [];
+      // Tuile fixe "Aide à distance" : ouvre une fenêtre d'explications, pas un site
+      if (config.aideDistance.actif) {
+        var bouton = el('button', { type: 'button', 'class': 'tuile tuile-distance' }, [
+          creerIcone('assistance.svg', COULEUR_DISTANCE),
+          el('span', { 'class': 'tuile-label', text: 'Aide à distance' })
+        ]);
+        bouton.style.setProperty('--couleur', COULEUR_DISTANCE);
+        bouton.addEventListener('click', function () { ouvrirDialog($('dialog-distance')); $('btn-fermer-distance').focus(); });
+        items.push(el('li', null, [bouton]));
+      }
+      // Tuile fixe "Un message me paraît bizarre" : conseils et vérification 100 % locale, toujours présente
+      var bizarre = el('button', { type: 'button', 'class': 'tuile tuile-bizarre' }, [
+        creerIcone('bouclier.svg', COULEUR_BIZARRE),
+        el('span', { 'class': 'tuile-label', text: 'Un message me paraît bizarre' })
+      ]);
+      bizarre.style.setProperty('--couleur', COULEUR_BIZARRE);
+      bizarre.addEventListener('click', function () { ouvrirDialog($('dialog-bizarre')); $('champ-adresse').focus(); });
+      items.push(el('li', null, [bizarre]));
+      return items;
+    }
+
+    // Regroupement : si aucune tuile n'a de groupe (ni config ni id connu),
+    // on rend une seule grille simple, comme avant.
+    var parGroupe = {};
+    var noms = [];           // ordre des groupes rencontrés
+    var avecGroupe = 0;
+    visibles.forEach(function (t) {
+      var g = groupeDe(t);
+      if (g) { avecGroupe++; }
+      if (!parGroupe[g]) { parGroupe[g] = []; noms.push(g); }
+      parGroupe[g].push(t);
+    });
+    var speciales = creerTuilesSpeciales();
+
+    if (!avecGroupe) {
+      var grille = el('ul', { 'class': 'tuiles' });
+      visibles.forEach(function (t) { grille.appendChild(creerTuileLien(t)); });
+      speciales.forEach(function (li) { grille.appendChild(li); });
+      conteneur.appendChild(grille);
+      $('message-vide').hidden = true;
+      return;
+    }
+
+    // Ordre : familles canoniques d'abord, puis groupes personnalisés, puis « Autres »
+    noms.sort(function (a, b) {
+      var ia = ORDRE_GROUPES.indexOf(a), ib = ORDRE_GROUPES.indexOf(b);
+      if (a === '') { return 1; }
+      if (b === '') { return -1; }
+      return (ia === -1 ? ORDRE_GROUPES.length : ia) - (ib === -1 ? ORDRE_GROUPES.length : ib);
+    });
+    var aide = ORDRE_GROUPES[ORDRE_GROUPES.length - 1];   // « Aide et sécurité »
+    if (speciales.length && noms.indexOf(aide) === -1) { noms.push(aide); parGroupe[aide] = []; }
+
+    noms.forEach(function (nom) {
+      var grille = el('ul', { 'class': 'tuiles' });
+      (parGroupe[nom] || []).forEach(function (t) { grille.appendChild(creerTuileLien(t)); });
+      if (nom === aide) { speciales.forEach(function (li) { grille.appendChild(li); }); }
+      if (!grille.childNodes.length) { return; }
+      var section = el('section', { 'class': 'groupe' });
+      section.appendChild(el('h2', { 'class': 'groupe-titre', text: nom || GROUPE_AUTRES }));
+      section.appendChild(grille);
+      conteneur.appendChild(section);
+    });
     $('message-vide').hidden = true;
   }
 
@@ -790,6 +861,7 @@
       t.url = carte.querySelector('[name="url"]').value.trim();
       t.couleur = carte.querySelector('[name="couleur"]').value.toLowerCase();
       t.icone = carte.querySelector('[name="icone"]').value;
+      t.groupe = carte.querySelector('[name="groupe"]').value;
     });
   }
 
@@ -819,6 +891,7 @@
     brouillon.tuiles.forEach(function (t, i) {
       var nom = t.label || ('Tuile n°' + (i + 1));
       if (!t.label) { erreurs.push('Tuile n°' + (i + 1) + ' : le libellé est vide.'); }
+      if (!groupeValide(t.groupe)) { erreurs.push(nom + ' : la famille « ' + t.groupe + ' » n\'est pas valide (lettres, espaces, tiret, apostrophe).'); }
       var a = analyserUrl(t.url);
       if (a.vide) { avertissements.push(nom + ' : adresse vide, la tuile ne sera pas affichée.'); return; }
       if (!a.ok) { erreurs.push(nom + ' : ' + a.erreur + '.'); return; }
@@ -955,7 +1028,7 @@
 
   function ajouterTuile() {
     lireFormulaire();
-    brouillon.tuiles.push({ id: 'tuile-' + Date.now(), label: '', url: 'https://', icone: ICONE_DEFAUT, couleur: COULEUR_DEFAUT });
+    brouillon.tuiles.push({ id: 'tuile-' + Date.now(), label: '', url: 'https://', icone: ICONE_DEFAUT, couleur: COULEUR_DEFAUT, groupe: '' });
     rendrePanneauTech();
     var cartes = $('panneau-tech').querySelectorAll('.carte-tuile');
     var derniere = cartes[cartes.length - 1];
@@ -1035,6 +1108,18 @@
       select.appendChild(opt);
     });
     champs.appendChild(el('label', { 'for': idBase + 'icone' }, ['Icône', select]));
+    var selGroupe = el('select', { id: idBase + 'groupe', name: 'groupe' });
+    [['', 'Automatique (selon la tuile)']].concat(ORDRE_GROUPES.map(function (g) { return [g, g]; })).forEach(function (o) {
+      var opt = el('option', { value: o[0], text: o[1] });
+      if (o[0] === t.groupe) { opt.selected = true; }
+      selGroupe.appendChild(opt);
+    });
+    if (t.groupe && ORDRE_GROUPES.indexOf(t.groupe) === -1) {
+      var autre = el('option', { value: t.groupe, text: t.groupe });
+      autre.selected = true;
+      selGroupe.appendChild(autre);
+    }
+    champs.appendChild(el('label', { 'for': idBase + 'groupe' }, ['Famille', selGroupe]));
     carte.appendChild(champs);
 
     // Avertissement en direct sur l'adresse

@@ -27,15 +27,16 @@
       <button type="button" id="lien-prenom" class="lien-prenom">Choisir mon prénom</button>
       <p id="date" class="date" aria-live="off"></p>
     </div>
-    <p id="heure" class="heure" aria-label="Heure actuelle"></p>
+    <div class="entete-droite">
+      <p id="heure" class="heure" aria-label="Heure actuelle"></p>
+      <!-- Réglages d'affichage : discrets, libellés écrits en toutes lettres -->
+      <nav class="reglages" aria-label="Réglages d'affichage">
+        <button type="button" id="btn-taille-moins" class="bouton bouton-reglage">Texte plus petit</button>
+        <button type="button" id="btn-taille-plus" class="bouton bouton-reglage">Texte plus grand</button>
+        <button type="button" id="btn-contraste" class="bouton bouton-reglage" aria-pressed="false">Contraste</button>
+      </nav>
+    </div>
   </header>
-
-  <!-- Réglages d'affichage : taille du texte et contraste -->
-  <nav class="reglages" aria-label="Réglages d'affichage">
-    <button type="button" id="btn-taille-moins" class="bouton bouton-reglage" aria-label="Réduire la taille du texte">A<span aria-hidden="true">-</span></button>
-    <button type="button" id="btn-taille-plus" class="bouton bouton-reglage" aria-label="Agrandir la taille du texte">A<span aria-hidden="true">+</span></button>
-    <button type="button" id="btn-contraste" class="bouton bouton-reglage" aria-pressed="false">Contraste élevé</button>
-  </nav>
 
   <!-- Suggestion d'installation (beforeinstallprompt) : cachée par défaut,
        affichée par app.js uniquement si le navigateur la propose et que la personne
@@ -49,8 +50,8 @@
   <p id="retour-accueil" class="retour-accueil" role="status" hidden></p>
 
   <main id="contenu">
-    <!-- La grille de tuiles est générée par app.js à partir de la configuration -->
-    <ul id="tuiles" class="tuiles" aria-label="Mes services en ligne"></ul>
+    <!-- Les tuiles sont générées par app.js, regroupées en familles si la config définit des groupes -->
+    <div id="tuiles" aria-label="Mes services en ligne"></div>
     <p id="message-vide" class="message-vide" hidden>Aucun bouton n'est configuré pour le moment.</p>
   </main>
 

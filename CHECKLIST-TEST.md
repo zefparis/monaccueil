@@ -34,12 +34,16 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 ## B. Lisibilité
 
 - [ ] Assis à sa place habituelle, le client lit **tous** les libellés sans effort.
-- [ ] Sinon : cliquer « A+ » une ou deux fois. Le réglage reste après fermeture /
-      réouverture du navigateur.
-- [ ] Tester « Contraste élevé » ; garder ce qui convient au client.
+- [ ] Sinon : cliquer « Texte plus grand » une ou deux fois (en haut à droite,
+      sous l'heure). Le réglage reste après fermeture / réouverture du navigateur.
+- [ ] Tester « Contraste » ; garder ce qui convient au client.
+- [ ] Les tuiles sont regroupées en familles lisibles (« Mes démarches »,
+      « Ma santé », « Mon quotidien », « Aide et sécurité »).
+- [ ] Sur l'écran du client, les principales tuiles tiennent sans défiler ;
+      sinon le bouton rouge d'aide reste collé en bas.
 - [ ] Zoom navigateur à 200 % (Ctrl + molette) : rien ne déborde, pas de défilement
       horizontal. Remettre à 100 % (Ctrl + 0) si non souhaité.
-- [ ] Chaque tuile a une icône claire et une couleur distincte.
+- [ ] Chaque tuile a une icône claire dans une pastille de couleur distincte.
 
 ## C. Clics
 
@@ -55,7 +59,7 @@ Cochez chaque ligne. Durée : environ 15 minutes.
       onglet comme avant.
 - [ ] Même vérification **dans Edge et dans Chrome**.
 - [ ] L'adresse ouverte commence bien par `https://` et le domaine est le bon.
-- [ ] Les tuiles « Ma banque », « Mes mails », « Photos » ouvrent les sites
+- [ ] Les tuiles « Banque », « Mails », « Photos » ouvrent les sites
       personnels du client (ou sont absentes si non configurées).
 - [ ] Aucun site ne demande d'installer quelque chose au premier clic.
 
@@ -70,7 +74,7 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 
 ## E. Bouton « J'ai besoin d'aide »
 
-- [ ] Le bouton rouge est visible sans défiler (sinon réduire « A- »).
+- [ ] Le bouton rouge est visible sans défiler (sinon réduire « Texte plus petit »).
 - [ ] Il affiche votre nom et votre numéro, en gros.
 - [ ] Le numéro est correct. Sur un appareil capable d'appeler, le lien `tel:`
       lance l'appel. Si le lien `tel:` ne fait rien sur ce PC : **plan B**, le
@@ -120,7 +124,7 @@ Cochez chaque ligne. Durée : environ 15 minutes.
       numéro.
 - [ ] « Fermer » et **Échap** ferment la fenêtre ; à la réouverture, le champ et le
       résultat sont **vides**.
-- [ ] En contraste élevé et en taille A+ A+ : la fenêtre reste lisible, défile si
+- [ ] En contraste élevé et en taille maximale : la fenêtre reste lisible, défile si
       besoin, rien ne déborde.
 - [ ] Mode technicien : les compteurs « vérifications / rouges » ont augmenté.
 

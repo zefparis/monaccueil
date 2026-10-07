@@ -7,11 +7,12 @@
 
 /* ---------- Variables ---------- */
 :root {
-  --fond: #ffffff;
-  --fond-doux: #f3f4f6;
-  --texte: #111827;          /* ratio 17:1 sur blanc */
-  --texte-secondaire: #374151; /* ratio 10:1 sur blanc */
-  --bordure: #9ca3af;
+  --fond: #faf7f1;            /* crème très clair, chaleureux sans être criard */
+  --carte: #ffffff;
+  --fond-doux: #f1ece2;
+  --texte: #1c1917;           /* presque noir chaud, ratio >15:1 sur carte */
+  --texte-secondaire: #44403c; /* ratio ~9:1 */
+  --bordure: #d8d0c2;         /* bordure neutre discrète */
   --focus: #000000;
   --focus-halo: #fde047;
   --aide: #b91c1c;            /* rouge sombre, blanc dessus = 7.4:1 */
@@ -19,7 +20,9 @@
   --principal: #1d4ed8;
   --principal-texte: #ffffff;
   --erreur: #b91c1c;
-  --rayon: 1rem;
+  --rayon: 1.15rem;
+  --ombre: 0 0.1rem 0.4rem rgba(28, 25, 23, 0.08), 0 0.5rem 1.4rem rgba(28, 25, 23, 0.05);
+  --ombre-survol: 0 0.3rem 0.8rem rgba(28, 25, 23, 0.14), 0 0.8rem 2rem rgba(28, 25, 23, 0.08);
   --transition: 250ms ease;
 }
 
@@ -31,6 +34,7 @@ html.taille-3 { font-size: 28px; }
 /* Mode contraste élevé : noir / blanc / jaune */
 html.contraste-eleve {
   --fond: #000000;
+  --carte: #000000;
   --fond-doux: #000000;
   --texte: #ffffff;
   --texte-secondaire: #ffffff;
@@ -42,6 +46,8 @@ html.contraste-eleve {
   --principal: #ffff00;
   --principal-texte: #000000;
   --erreur: #ffff00;
+  --ombre: none;
+  --ombre-survol: none;
 }
 
 /* Respect de la préférence "réduire les animations" */
@@ -92,17 +98,17 @@ body {
 .entete {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem 2rem;
-  padding: 1.5rem 2rem 0.5rem;
+  gap: 0.5rem 2rem;
+  padding: 0.9rem 2rem 0.2rem;
 }
 
 .titre {
   margin: 0;
-  font-size: 2.4rem;
+  font-size: 1.9rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   /* Empêche la sélection du texte lors de l'appui long */
   user-select: none;
   -webkit-user-select: none;
@@ -110,18 +116,18 @@ body {
 }
 
 .date {
-  margin: 0.25rem 0 0;
-  font-size: 1.3rem;
+  margin: 0.15rem 0 0;
+  font-size: 1.2rem;
   color: var(--texte-secondaire);
 }
 
-/* Lien « Choisir / Changer mon prénom » sous le titre : petit, souligné, pas une icône */
+/* Lien « Choisir / Changer mon prénom » sous le titre : discret mais lisible et souligné */
 .lien-prenom {
   display: block;
-  margin: 0.1rem 0 0.2rem;
-  padding: 0.2rem 0.4rem;
+  margin: 0.05rem 0 0.15rem;
+  padding: 0.15rem 0.3rem;
   font: inherit;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   color: var(--texte-secondaire);
   background: none;
   border: none;
@@ -140,21 +146,42 @@ body {
 }
 .lien-discret:hover { color: var(--texte); }
 
+/* Colonne de droite : l'heure en grand, les réglages en dessous, discrets */
+.entete-droite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .heure {
   margin: 0;
-  font-size: 3.2rem;
+  font-size: 2rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
-/* ---------- Réglages d'affichage ---------- */
+/* ---------- Réglages d'affichage : compacts, libellés écrits ---------- */
 .reglages {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  padding: 0.5rem 2rem 1rem;
+  justify-content: flex-end;
+  gap: 0.4rem;
 }
+.bouton.bouton-reglage {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  min-height: 2.2rem;            /* 44px minimum, sans concurrencer les services */
+  min-width: 2.2rem;
+  border-width: 0.08rem;
+  border-color: var(--texte-secondaire);
+  border-radius: 0.6rem;
+  color: var(--texte-secondaire);
+  background: var(--carte);
+}
+.bouton.bouton-reglage:hover { color: var(--texte); border-color: var(--texte); }
 
 /* ---------- Bannière « Installer » (PWA) ---------- */
 .banniere-install {
@@ -205,8 +232,6 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
 .bouton:hover { background: var(--fond-doux); }
 .bouton[aria-pressed="true"] { background: var(--texte); color: var(--fond); }
 
-.bouton-reglage { font-size: 1.3rem; gap: 0; }
-
 .bouton-principal {
   background: var(--principal);
   color: var(--principal-texte);
@@ -215,7 +240,18 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
 .bouton-principal:hover { filter: brightness(1.1); background: var(--principal); }
 
 /* ---------- Grille de tuiles ---------- */
-#contenu { flex: 1; padding: 0.5rem 2rem 1.5rem; }
+#contenu { flex: 1; padding: 0.3rem 2rem 1rem; }
+
+/* Familles de tuiles : petit titre discret au-dessus de chaque grille */
+.groupe { margin-top: 0.65rem; }
+.groupe:first-child { margin-top: 0.3rem; }
+.groupe-titre {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--texte-secondaire);
+  letter-spacing: 0.02em;
+}
 
 .tuiles {
   list-style: none;
@@ -223,7 +259,7 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
   padding: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.5rem;
+  gap: clamp(0.45rem, 0.9vw, 0.8rem);
 }
 @media (max-width: 1100px) { .tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px)  { .tuiles { grid-template-columns: minmax(0, 1fr); } }
@@ -235,28 +271,37 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.8rem;
-  min-height: 8rem;              /* 160px au niveau 1 */
-  padding: 1.2rem 1rem;
+  gap: 0.35rem;
+  min-height: clamp(4.8rem, 9.5vh, 5.6rem);   /* ~100-112px selon l'écran */
+  padding: 0.5rem 0.8rem;
   text-decoration: none;
   color: var(--texte);
-  background: var(--fond);
-  border: 0.25rem solid var(--couleur, var(--bordure));
-  border-bottom-width: 0.6rem;
+  background: var(--carte);
+  border: 0.1rem solid var(--bordure);       /* une seule bordure fine, neutre */
   border-radius: var(--rayon);
-  transition: background-color var(--transition), transform var(--transition);
+  box-shadow: var(--ombre);
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
   overflow-wrap: anywhere;
 }
-.tuile:hover { background: var(--fond-doux); }
-.tuile:active { transform: scale(0.98); }
+.tuile:hover {
+  transform: translateY(-0.15rem);           /* léger soulèvement, sans animation rapide */
+  border-color: var(--couleur, var(--bordure));
+  box-shadow: var(--ombre-survol);
+}
+.tuile:active { transform: translateY(0); box-shadow: var(--ombre); }
 
-/* Icône : SVG inline (traits épais), colorée avec la couleur d'accent de la tuile */
+/* Icône : SVG inline dans une pastille teintée (teinte claire de l'accent) */
 .icone {
   display: inline-block;
   flex-shrink: 0;
-  width: 4rem;
-  height: 4rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  border-radius: 50%;
   color: var(--couleur, currentColor);
+  background: var(--fond-doux);                                 /* repli si color-mix absent */
+  background: color-mix(in srgb, var(--couleur, #6b7280) 14%, #ffffff);
   fill: none;
   stroke: currentColor;
   stroke-width: 5;
@@ -265,46 +310,49 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
 }
 
 .tuile-label {
-  font-size: 1.4rem;             /* 28px au niveau 1 */
+  font-size: 1.3rem;             /* 26px au niveau 1, ~36px au niveau 3 */
   font-weight: 700;
   text-align: center;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
-/* En contraste élevé : tuiles blanches sur noir, icônes jaunes */
-html.contraste-eleve .tuile { border-color: #ffffff; }
-html.contraste-eleve .tuile .icone, html.contraste-eleve .carte-tuile .icone { color: #ffff00; }
-html.contraste-eleve .tuile:hover { background: #1f1f1f; }
+/* En contraste élevé : une seule bordure blanche, pas d'ombre, icônes jaunes */
+html.contraste-eleve .tuile { border: 0.15rem solid #ffffff; box-shadow: none; }
+html.contraste-eleve .tuile:hover { border-color: #ffffff; background: #1c1c1c; transform: none; }
+html.contraste-eleve .tuile .icone, html.contraste-eleve .carte-tuile .icone { color: #ffff00; background: #000000; }
 
 .message-vide { font-size: 1.3rem; text-align: center; }
 
-/* ---------- Pied de page ---------- */
+/* ---------- Pied de page : collé en bas, le bouton d'aide reste toujours visible ---------- */
 .pied {
+  position: sticky;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem 1.5rem;
-  border-top: 0.15rem solid var(--bordure);
+  gap: 0.35rem;
+  padding: 0.4rem 2rem 0.6rem;
+  border-top: 0.1rem solid var(--bordure);
+  background: var(--fond);
 }
 
 .bouton-aide {
-  font-size: 1.6rem;
-  min-height: 4.5rem;
-  padding: 0.8rem 2rem;
+  font-size: 1.3rem;
+  min-height: 2.9rem;
+  padding: 0.3rem 2rem;
   background: var(--aide);
   color: var(--aide-texte);
   border-color: var(--aide);
   width: min(100%, 30rem);
 }
 .bouton-aide:hover { background: var(--aide); filter: brightness(1.1); }
-.bouton-aide .icone { width: 2.4rem; height: 2.4rem; color: var(--aide-texte); }
+.bouton-aide .icone { width: 2rem; height: 2rem; color: var(--aide-texte); }
 
 .bandeau {
   margin: 0;
-  max-width: 50rem;
+  max-width: 62rem;
   text-align: center;
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: var(--texte-secondaire);
 }
 
@@ -313,13 +361,15 @@ html.contraste-eleve .tuile:hover { background: #1f1f1f; }
   width: min(92vw, 36rem);
   max-height: 90vh;
   padding: 2rem;
-  border: 0.3rem solid var(--texte);
+  border: 0.15rem solid var(--bordure);
   border-radius: var(--rayon);
+  box-shadow: var(--ombre-survol);
   color: var(--texte);
-  background: var(--fond);
+  background: var(--carte);
   text-align: center;
   overflow: auto;
 }
+html.contraste-eleve .dialog { border: 0.15rem solid #ffffff; box-shadow: none; }
 .dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
 .dialog h2 { margin: 0 0 1rem; font-size: 1.8rem; }
 .aide-texte { font-size: 1.2rem; margin: 0.8rem 0; }
@@ -555,7 +605,10 @@ body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.
 
 /* ---------- Petites fenêtres ---------- */
 @media (max-width: 700px) {
-  .entete, .reglages, #contenu, .pied, .panneau-tech { padding-left: 1rem; padding-right: 1rem; }
-  .titre { font-size: 2rem; }
-  .heure { font-size: 2.6rem; }
+  .entete, #contenu, .pied, .panneau-tech { padding-left: 1rem; padding-right: 1rem; }
+  .entete { padding-top: 0.8rem; }
+  .titre { font-size: 1.8rem; }
+  .heure { font-size: 2rem; }
+  .entete-droite { align-items: flex-start; }
+  .reglages { justify-content: flex-start; }
 }

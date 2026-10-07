@@ -34,7 +34,7 @@ Personne : ____________________  Date de la visite : ____ / ____ / ______
 ### Matériel et réglages
 - Navigateur utilisé au départ : ______________  Testé aussi dans Edge : ☐ oui ☐ non
 - Écran tactile : ☐ oui ☐ non — si oui, boutons assez grands au doigt : ☐ oui ☐ non
-- Taille de texte choisie (A- / A+ / A++) : ______  Contraste élevé : ☐ oui ☐ non
+- Taille de texte choisie (normale / grande / maximale) : ______  Contraste élevé : ☐ oui ☐ non
 - Le lien `tel:` fait quelque chose sur ce PC : ☐ oui ☐ non
   → si non : plan B noté « numéro écrit en gros » sur la fiche : ☐ vérifié lisible
 
