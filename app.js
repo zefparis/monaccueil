@@ -616,7 +616,7 @@
   function groupeDe(t) { return t.groupe || GROUPES_PAR_ID[t.id] || ''; }
 
   // Les liens « Ajouter / Retirer un bouton » survivent aux re-rendus : on garde le nœud
-  var persoActions = null;
+  var persoActions = null, persoLienAjout = null;
 
   function afficherTuiles() {
     var conteneur = $('tuiles');
@@ -692,12 +692,22 @@
     });
     var speciales = creerTuilesSpeciales();
 
-    // Liens « Ajouter un bouton » / « Retirer mes boutons » : ni construits ni affichés si la config dit « non »
+    // « Ajouter un bouton » devient une tuile pointillée de la grille (un
+    // emplacement à remplir, impossible à manquer) ; « Retirer » est un
+    // bouton visible sous la grille, seulement quand des boutons perso existent.
     var actions = persoActions || $('perso-actions');
     if (!persoActions) { persoActions = actions; }
     var ajoutActif = config.ajoutParPersonne !== 'non';
+    if (!persoLienAjout) { persoLienAjout = $('lien-ajout'); }
+    var lienAjout = persoLienAjout;
+    function tuileAjout() {
+      var li = el('li');
+      li.appendChild(lienAjout);
+      lienAjout.hidden = false;
+      return li;
+    }
     if (actions) {
-      actions.hidden = !ajoutActif;
+      actions.hidden = !ajoutActif || !tuilesPerso.length;
       actions.querySelector('#lien-retrait').hidden = !tuilesPerso.length;
     }
 
@@ -705,8 +715,9 @@
       var grille = el('ul', { 'class': 'tuiles' });
       tous.forEach(function (t) { grille.appendChild(creerTuileLien(t)); });
       speciales.forEach(function (li) { grille.appendChild(li); });
+      if (ajoutActif && lienAjout) { grille.appendChild(tuileAjout()); }
       conteneur.appendChild(grille);
-      if (actions && ajoutActif) { conteneur.appendChild(actions); }
+      if (actions && !actions.hidden) { conteneur.appendChild(actions); }
       $('message-vide').hidden = true;
       return;
     }
@@ -734,8 +745,9 @@
       if (!grille.childNodes.length && !(nom === GROUPE_PERSO && ajoutActif)) { return; }
       var section = el('section', { 'class': 'groupe' });
       section.appendChild(el('h2', { 'class': 'groupe-titre', text: nom || GROUPE_AUTRES }));
+      if (nom === GROUPE_PERSO && ajoutActif && lienAjout) { grille.appendChild(tuileAjout()); }
       if (grille.childNodes.length) { section.appendChild(grille); }
-      if (nom === GROUPE_PERSO && actions && ajoutActif) { section.appendChild(actions); }
+      if (nom === GROUPE_PERSO && actions && !actions.hidden) { section.appendChild(actions); }
       conteneur.appendChild(section);
     });
     $('message-vide').hidden = true;

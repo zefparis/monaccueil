@@ -654,15 +654,48 @@ body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.
 }
 
 /* ---------- Personnalisation : choix des couleurs ---------- */
-/* Liens sous la grille « Mon quotidien » (même aspect que « Changer mon prénom ») */
+/* « Ajouter / Retirer un bouton » sous « Mon quotidien » : de vrais boutons
+   bien visibles (bordure épaisse, fond carte), jamais de liens discrets —
+   la personne doit les remarquer sans qu'on les lui montre. */
 .perso-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.2rem;
-  margin: 0;
+  gap: 0.8rem;
+  margin: 0.5rem 0 0;
   padding-left: 0.2rem;
 }
-.perso-actions .lien-prenom { font-size: 0.95rem; padding: 0.05rem 0.3rem; margin: 0; }
+.bouton.bouton-perso {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.4rem;                 /* ≥ 56 px, cible tactile généreuse */
+  padding: 0.5rem 1.4rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--principal);
+  background: var(--carte);
+  border: 0.2rem solid var(--principal);
+  border-radius: var(--rayon);
+  box-shadow: var(--ombre);
+}
+.bouton.bouton-perso:hover { filter: brightness(0.97); }
+html.contraste-eleve .bouton.bouton-perso { color: #ffff00; border-color: #ffff00; background: #000000; }
+
+/* « ＋ Ajouter un bouton » : une tuile en pointillés dans la grille —
+   un emplacement vide à remplir, plus visible qu'un lien discret */
+.tuile-ajout {
+  border-style: dashed;
+  border-width: 0.18rem;
+  border-color: var(--principal);
+  color: var(--principal);
+  background: transparent;
+  box-shadow: none;
+}
+.tuile-ajout:hover { border-color: var(--principal); background: var(--fond-doux); transform: none; }
+.tuile-ajout .ajout-plus { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+.tuile-ajout .tuile-label { color: var(--principal); }
+html.contraste-eleve .tuile-ajout { border-color: #ffff00; color: #ffff00; background: #000; }
+html.contraste-eleve .tuile-ajout .tuile-label { color: #ffff00; }
 
 /* ---------- Téléphone ---------- */
 /* Le bouton « Réglages » et la barre fixe n'existent que sur téléphone. */
@@ -714,7 +747,7 @@ body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.
   .tuile-label { font-size: 1.05rem; line-height: 1.2; }
   .tuile .icone { width: 2.3rem; height: 2.3rem; padding: 0.42rem; }
   .groupe-titre { font-size: 1rem; margin: 0.6rem 0 0.15rem; }
-  .perso-actions { flex-direction: column; gap: 0.25rem; align-items: flex-start; }
+  .perso-actions { flex-direction: column; gap: 0.5rem; align-items: stretch; }
 
   /* Tous les contrôles : cibles de 56 px, pensées pour le pouce */
   .bouton, .dialog .bouton { min-height: 3.5rem; }
