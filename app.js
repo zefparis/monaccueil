@@ -17,7 +17,8 @@
   var ICONES = [
     'impots.svg', 'sante.svg', 'famille.svg', 'retraite.svg', 'administration.svg',
     'medecin.svg', 'courrier.svg', 'banque.svg', 'mails.svg', 'photos.svg',
-    'meteo.svg', 'cle.svg', 'assistance.svg', 'aide.svg', 'telephone.svg', 'bouclier.svg'
+    'meteo.svg', 'cle.svg', 'assistance.svg', 'aide.svg', 'telephone.svg', 'bouclier.svg',
+    'transport.svg', 'energie.svg', 'magasin.svg', 'tele.svg'
   ];
   // Outils d'aide à distance pris en charge (le senior initie et accepte toujours la connexion)
   var OUTILS_DISTANCE = ['quickassist', 'rustdesk'];
@@ -263,6 +264,7 @@
       var label = typeof s.label === 'string' ? s.label.trim() : '';
       var url = typeof s.url === 'string' ? s.url.trim() : '';
       return { id: 'catalogue-' + (i + 1), label: label, url: url,
+        famille: typeof s.famille === 'string' ? s.famille.trim().slice(0, 40) : '',
         icone: iconeValide(s.icone) ? s.icone : ICONE_DEFAUT, ok: !!(label && analyserUrl(url).ok) };
     }).filter(function (s) { return s.ok; });
   }
@@ -1274,7 +1276,13 @@
     var d = $('dialog-ajout');
     // Étape A : le catalogue en un clic (ses domaines sont reconnus par le vérificateur)
     var liste = $('liste-catalogue');
+    var familleCourante = null;
     catalogue().forEach(function (s) {
+      var f = typeof s.famille === 'string' ? s.famille.trim() : '';
+      if (f !== familleCourante) {
+        familleCourante = f;
+        if (f) { liste.appendChild(el('p', { 'class': 'catalogue-famille', text: f })); }
+      }
       var b = el('button', { type: 'button', 'class': 'catalogue-carte' }, [
         creerIcone(s.icone, null),
         el('span', { 'class': 'catalogue-nom', text: s.label })

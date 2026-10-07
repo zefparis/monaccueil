@@ -881,6 +881,15 @@ html.contraste-eleve .palette-nom { color: #ffffff; }
 }
 .catalogue-carte:hover { border-color: var(--principal); }
 .catalogue-carte .icone { width: 2rem; height: 2rem; padding: 0.35rem; }
+.catalogue-famille {
+  grid-column: 1 / -1;
+  margin: 0.5rem 0 -0.2rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--texte-secondaire);
+  border-bottom: 0.1rem solid var(--bordure);
+  padding-bottom: 0.15rem;
+}
 
 /* Grosses vignettes d'icônes (étape « Autre site ») */
 .liste-icones {

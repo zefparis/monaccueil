@@ -102,7 +102,8 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   affichée** (c'est le cas par défaut de « Banque », « Mails », « Photos »).
 - `icone` : un nom parmi `impots.svg, sante.svg, famille.svg, retraite.svg,
   administration.svg, medecin.svg, courrier.svg, banque.svg, mails.svg, photos.svg,
-  meteo.svg, cle.svg, aide.svg, telephone.svg, bouclier.svg`.
+  meteo.svg, cle.svg, assistance.svg, aide.svg, telephone.svg, bouclier.svg,
+  transport.svg, energie.svg, magasin.svg, tele.svg`.
 - `couleur` : code hexadécimal à 6 chiffres. Choisissez des couleurs foncées
   (elle teinte la pastille d'icône et la bordure au survol).
 - `groupe` *(facultatif)* : famille affichée au-dessus de la tuile —
@@ -163,7 +164,8 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   blanche, nom de 1 à 24 caractères). « Retirer mes boutons » ne touche que
   ces cases-là. Le catalogue est dans `catalogue.js` (ou remplacé par la clé
   `catalogue` de la config : même format que `tuiles` sans `couleur` ni
-  `groupe`) ; ses domaines sont automatiquement reconnus par le vérificateur.
+  `groupe`, plus la clé facultative `famille` qui regroupe les entrées sous
+  un titre) ; ses domaines sont automatiquement reconnus par le vérificateur.
   L'export inclut une section séparée `personnalisation` (palette + cases),
   restaurée dans `localStorage` à l'import après revalidation — jamais
   mélangée à `tuiles`.
