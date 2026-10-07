@@ -84,7 +84,7 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
 ```json
 {
   "prenom": "Jeanne",
-  "technicien": { "nom": "Benji", "telephone": "+33 0 00 00 00 00" },
+  "technicien": { "nom": "Benji", "telephone": "+33 7 58 06 05 56" },
   "pinHash": "03ac67…46f4",
   "domainesOfficiels": ["impots.gouv.fr", "ameli.fr", "..."],
   "raccourcisseurs": ["bit.ly", "tinyurl.com", "..."],
@@ -398,8 +398,8 @@ rafraîchissement du cache hors ligne.
 
 Le site peut être hébergé en https — par exemple chez Vercel — pour servir de
 **démonstration** ou d'accueil de dépannage distant. Le dépôt ne contient qu'une
-configuration générique : prénom « Jeanne », technicien « Benji », numéro
-fictif, aucune donnée client.
+configuration générique : prénom « Jeanne », technicien « Benji » avec son
+numéro professionnel (public), aucune donnée client.
 
 ### Fichiers ajoutés pour l'hébergement
 
