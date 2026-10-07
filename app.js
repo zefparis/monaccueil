@@ -28,6 +28,12 @@
   var COULEUR_DEFAUT = '#1d4ed8';
   var LONGUEUR_MAX_ARNAQUE = 300;
 
+  // Ouverture des sites : fenêtre dédiée à droite, ou nouvel onglet
+  var OUVERTURES = ['fenetre', 'onglet'];
+  var RATIO_FENETRE = 0.75;            // la fenêtre occupe ~75 % de la largeur, 25 % reste pour l'accueil
+  var LARGEUR_MIN_FENETRE = 1000;      // écran plus étroit : nouvel onglet (la moitié visible serait trop petite)
+  var DELAI_BANDEAU_RETOUR = 45000;    // le message de retour s'efface aussi tout seul (ms)
+
   // Clés de mémorisation locale
   var CLE_CONFIG = 'monaccueil.config';
   var CLE_TAILLE = 'monaccueil.taille';
@@ -222,6 +228,7 @@
       pinHash: typeof c.pinHash === 'string' ? c.pinHash.toLowerCase() : '',
       // false = mode technicien totalement désactivé (instance publique de démo) ; absent ou autre valeur = actif
       modeTechnicien: typeof c.modeTechnicien === 'boolean' ? c.modeTechnicien : true,
+      ouvertureSites: OUVERTURES.indexOf(c.ouvertureSites) !== -1 ? c.ouvertureSites : 'fenetre',
       domainesOfficiels: listeDomaines(Array.isArray(c.domainesOfficiels) ? c.domainesOfficiels : []),
       raccourcisseurs: listeDomaines(Array.isArray(c.raccourcisseurs) ? c.raccourcisseurs : (Array.isArray(defaut.raccourcisseurs) ? defaut.raccourcisseurs : [])),
       arnaques: listeArnaques(Array.isArray(c.arnaques) ? c.arnaques : (Array.isArray(defaut.arnaques) ? defaut.arnaques : [])),
@@ -334,6 +341,64 @@
       : 'Une fenêtre vous demandera d\'accepter : cliquez sur « Autoriser ».';
   }
 
+  /* ------------------------------------------------------------------
+     Ouverture des sites
+     Par défaut (« fenetre ») : fenêtre popup nommée unique, ~75 % de la
+     largeur à droite — l'accueil reste visible à gauche, et une autre tuile
+     réutilise la même fenêtre. Repli sur l'onglet (lien target=_blank) si
+     l'écran est étroit, si la fenêtre est bloquée ou si l'option vaut
+     « onglet ». window.open n'hérite pas de rel=noopener : on coupe
+     w.opener soi-même tout de suite (la sécurité prime sur la réutilisation).
+     ------------------------------------------------------------------ */
+
+  /** Position/taille de la fenêtre pour un écran donné ; null si trop étroit. */
+  function calculerFenetre(largeurEcran, hauteurEcran, gaucheBase) {
+    if (largeurEcran < LARGEUR_MIN_FENETRE) { return null; }
+    var largeur = Math.floor(largeurEcran * RATIO_FENETRE);
+    return {
+      left: (gaucheBase || 0) + (largeurEcran - largeur),
+      top: 0,
+      width: largeur,
+      height: hauteurEcran
+    };
+  }
+
+  /** Ouvre l'URL dans la fenêtre dédiée ; retourne la fenêtre ou null (repli onglet). */
+  function ouvrirSite(url) {
+    var geo = calculerFenetre(screen.availWidth, screen.availHeight, screen.availLeft);
+    if (!geo) { return null; }
+    var w = null;
+    try {
+      w = window.open(url, 'monaccueil-site',
+        'popup=yes,left=' + geo.left + ',top=' + geo.top + ',width=' + geo.width + ',height=' + geo.height);
+    } catch (e) { w = null; }
+    if (!w) { return null; }
+    try { w.opener = null; } catch (e) { /* rien à faire */ }
+    try { w.focus(); } catch (e) { /* idem */ }
+    return w;
+  }
+
+  /* Bandeau « comment revenir » après ouverture d'un site : disparaît au
+     retour sur l'accueil (focus/visibility) ou tout seul après un délai. */
+  var minuteurRetour = null;
+  function afficherRetour(type) {
+    var b = $('retour-accueil');
+    b.textContent = type === 'fenetre'
+      ? 'Votre site s\'est ouvert sur la droite. Pour revenir ici : fermez-le avec la croix en haut à droite.'
+      : 'Votre site s\'est ouvert dans un autre onglet. Pour revenir ici : fermez-le avec la croix de l\'onglet.';
+    b.hidden = false;
+    if (minuteurRetour) { clearTimeout(minuteurRetour); }
+    minuteurRetour = setTimeout(masquerRetour, DELAI_BANDEAU_RETOUR);
+  }
+  function masquerRetour() {
+    $('retour-accueil').hidden = true;
+    if (minuteurRetour) { clearTimeout(minuteurRetour); minuteurRetour = null; }
+  }
+  function initRetour() {
+    window.addEventListener('focus', masquerRetour);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { masquerRetour(); } });
+  }
+
   function afficherTuiles() {
     var liste = $('tuiles');
     vider(liste);
@@ -349,6 +414,11 @@
         el('span', { 'class': 'tuile-label', text: t.label || t.url })
       ]);
       lien.style.setProperty('--couleur', t.couleur);
+      lien.addEventListener('click', function (ev) {
+        if (config.ouvertureSites === 'onglet') { afficherRetour('onglet'); return; }  // lien normal : target=_blank
+        if (ouvrirSite(t.url)) { ev.preventDefault(); afficherRetour('fenetre'); }
+        else { afficherRetour('onglet'); }  // bloqué ou écran étroit : le lien target=_blank fait le travail
+      });
       liste.appendChild(el('li', null, [lien]));
     });
     // Tuile fixe "Aide à distance" : ouvre une fenêtre d'explications, pas un site
@@ -646,6 +716,7 @@
     brouillon.aideDistance.actif = p.querySelector('[name="distance-actif"]').checked;
     brouillon.aideDistance.outil = p.querySelector('[name="distance-outil"]').value;
     brouillon.aideDistance.idRustdesk = p.querySelector('[name="distance-id"]').value.replace(/[^0-9]/g, '');
+    brouillon.ouvertureSites = p.querySelector('[name="ouverture-sites"]').value;
     brouillon.domainesOfficiels = lireListeTexte(p.querySelector('[name="domaines"]').value);
     brouillon.raccourcisseurs = lireListeTexte(p.querySelector('[name="raccourcisseurs"]').value);
     brouillon.arnaques = Array.prototype.map.call(p.querySelectorAll('.carte-arnaque'), function (carte) {
@@ -667,6 +738,7 @@
     var erreurs = [], avertissements = [];
     if (!brouillon.prenom) { erreurs.push('Le prénom est vide.'); }
     if (!brouillon.technicien.telephone) { erreurs.push('Le numéro de téléphone du technicien est vide.'); }
+    if (OUVERTURES.indexOf(brouillon.ouvertureSites) === -1) { brouillon.ouvertureSites = 'fenetre'; }
     if (OUTILS_DISTANCE.indexOf(brouillon.aideDistance.outil) === -1) { brouillon.aideDistance.outil = 'quickassist'; }
     if (brouillon.aideDistance.actif && brouillon.aideDistance.outil === 'rustdesk' && !brouillon.aideDistance.idRustdesk) {
       avertissements.push('Aide à distance : l\'identifiant RustDesk du poste est vide (facultatif, mais pratique pour vous).');
@@ -996,6 +1068,16 @@
     general.appendChild(el('label', { 'for': 'tech-tel' }, ['Téléphone du technicien',
       el('input', { id: 'tech-tel', name: 'tech-tel', type: 'tel', value: brouillon.technicien.telephone, maxlength: '30', autocomplete: 'off' })]));
     p.appendChild(general);
+
+    // Ouverture des sites
+    var selOuverture = el('select', { id: 'tech-ouverture', name: 'ouverture-sites' });
+    [['fenetre', 'Dans une fenêtre à droite (l\'accueil reste visible) — recommandé'], ['onglet', 'Dans un nouvel onglet']].forEach(function (o) {
+      var opt = el('option', { value: o[0], text: o[1] });
+      if (o[0] === brouillon.ouvertureSites) { opt.selected = true; }
+      selOuverture.appendChild(opt);
+    });
+    p.appendChild(el('div', { 'class': 'champs' }, [
+      el('label', { 'for': 'tech-ouverture' }, ['Quand on clique un bouton, le site s\'ouvre', selOuverture])]));
 
     // Aide à distance
     p.appendChild(el('h3', { text: 'Aide à distance' }));
@@ -1399,6 +1481,7 @@
     initAide();
     initBizarre();
     initInstall();
+    initRetour();
     chargerConfig().then(function (c) {
       config = c;
       afficherEntete();

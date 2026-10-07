@@ -108,6 +108,15 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   totalement le mode technicien : l'appui long sur le titre ne fait rien, aucun
   panneau n'est construit, rien ne le laisse deviner. Mettez `false` sur une
   instance **publique de démonstration**, `true` chez un vrai client (§ 10).
+- `ouvertureSites` : `"fenetre"` (défaut) ou `"onglet"`. Avec `fenetre`, un clic
+  de tuile ouvre le site dans une **fenêtre dédiée à droite** (~75 % de la
+  largeur) — l'accueil reste visible à gauche, un autre clic réutilise la même
+  fenêtre, et un bandeau explique comment revenir. Repli automatique sur un
+  onglet si l'écran est étroit (< 1000 px) ou si la fenêtre est bloquée. Les
+  tuiles restent de vrais liens : clic droit, Entrée et navigateurs sans
+  `window.open` fonctionnent toujours. Sécurité : `w.opener` est coupé
+  immédiatement (l'isolation `noopener` est préservée ; sans elle, la fenêtre
+  nommée ne pourrait pas être réutilisée).
 - `domainesOfficiels` : liste de domaines « connus ». Toute URL hors liste déclenche
   un avertissement en mode technicien (elle reste autorisée). Ajoutez-y la banque
   et la messagerie du client. **C'est aussi la liste de référence de la tuile

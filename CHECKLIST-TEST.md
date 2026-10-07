@@ -26,8 +26,17 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 
 ## C. Clics
 
-- [ ] Cliquer **chaque** tuile : le bon site s'ouvre, dans un **nouvel onglet** (ou
-      une nouvelle fenêtre en mode application).
+- [ ] Cliquer **chaque** tuile : le bon site s'ouvre dans la **fenêtre dédiée à
+      droite** (~75 % de la largeur), MonAccueil reste visible à gauche.
+- [ ] Cliquer une **deuxième tuile** : le site s'ouvre dans la **même** fenêtre
+      (pas d'empilement) et repasse au premier plan.
+- [ ] Le bandeau « Votre site s'est ouvert sur la droite… » apparaît en haut de
+      l'accueil et disparaît au retour.
+- [ ] **Écran étroit** (< 1000 px de large) ou **fenêtre bloquée** : repli en
+      nouvel onglet, bandeau adapté (« dans un autre onglet »).
+- [ ] Option `ouvertureSites: "onglet"` en mode technicien : tout s'ouvre en
+      onglet comme avant.
+- [ ] Même vérification **dans Edge et dans Chrome**.
 - [ ] L'adresse ouverte commence bien par `https://` et le domaine est le bon.
 - [ ] Les tuiles « Ma banque », « Mes mails », « Photos » ouvrent les sites
       personnels du client (ou sont absentes si non configurées).
@@ -35,8 +44,9 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 
 ## D. Retour à l'accueil
 
-- [ ] Montrer au client comment **revenir au premier onglet** (ou à la fenêtre
-      MonAccueil restée derrière) : la page est toujours là.
+- [ ] Montrer au client comment **fermer la fenêtre du site** (croix en haut à
+      droite) ou cliquer l'icône **Mon Accueil dans la barre des tâches** :
+      l'accueil est toujours là. Épingler l'icône à la barre des tâches.
 - [ ] Fermer complètement le navigateur, le rouvrir : MonAccueil réapparaît.
 - [ ] Bouton Accueil du navigateur (si activé) : revient sur MonAccueil.
 - [ ] Redémarrer le PC une fois : MonAccueil est de retour.

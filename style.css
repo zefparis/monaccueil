@@ -143,6 +143,21 @@ body {
 .banniere-install .bouton { font-size: 1rem; min-height: 2.5rem; padding: 0.4rem 1rem; }
 .banniere-fermer { padding: 0.4rem 0.7rem; }
 
+/* ---------- Message de retour après ouverture d'un site ---------- */
+.retour-accueil {
+  margin: 0 2rem 1rem;
+  padding: 1rem 1.4rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--texte);
+  background: var(--fond-doux);
+  border: 0.3rem solid var(--principal);
+  border-radius: var(--rayon);
+}
+.retour-accueil[hidden] { display: none; }
+html.contraste-eleve .retour-accueil { border-color: #ffff00; }
+
 /* ---------- Boutons génériques ---------- */
 .bouton {
   font: inherit;

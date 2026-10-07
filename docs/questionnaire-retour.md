@@ -11,6 +11,8 @@ Personne : ____________________  Date de la visite : ____ / ____ / ______
 ### Autonomie observée
 - Temps pour trouver une démarche sans aide (impôts ou santé) : ______ secondes
 - A-t-elle réussi seule : ☐ oui ☐ avec un geste d'aide ☐ non
+- **Retour à l'accueil** après l'ouverture d'un site : elle a fermé la fenêtre
+  ☐ croix ☐ barre des tâches ☐ n'a pas trouvé ☐ a paniqué — commentaire : _______
 - Hésitations observées (où, sur quoi) : ____________________________________
 - Boutons jamais utilisés ou jamais regardés : _______________________________
 - Boutons manquants qu'elle a cherchés (lesquels ?) : _________________________
