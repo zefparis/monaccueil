@@ -9,6 +9,8 @@ window.MONACCUEIL_CONFIG = {
   "pinHash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
   "modeTechnicien": false,
   "ouvertureSites": "fenetre",
+  "ouvertureMobile": "onglet",
+  "lienVisio": "",
   "palette": "chaleureux",
   "ajoutParPersonne": "catalogue",
   "aideDistance": {
@@ -90,7 +92,7 @@ window.MONACCUEIL_CONFIG = {
     },
     {
       "titre": "Le faux support Microsoft ou le faux proche en difficulté",
-      "texte": "Une alerte à l'écran ou un message d'un « enfant » avec un nouveau numéro réclame une action urgente ou de l'argent. Appelez le proche à son numéro habituel, ou appelez-moi."
+      "texte": "Une alerte à l'écran ou un message WhatsApp d'un « enfant » avec un nouveau numéro réclame une action urgente ou de l'argent. Appelez le proche à son numéro habituel, ou appelez-moi."
     }
   ],
   "tuiles": [

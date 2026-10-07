@@ -126,9 +126,11 @@ body {
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1.15;
-  /* Empêche la sélection du texte lors de l'appui long */
+  /* Empêche la sélection du texte lors de l'appui long (mode technicien) */
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
   cursor: default;
 }
 
@@ -279,7 +281,6 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
   gap: clamp(0.45rem, 0.9vw, 0.8rem);
 }
 @media (max-width: 1100px) { .tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px)  { .tuiles { grid-template-columns: minmax(0, 1fr); } }
 .tuiles li { display: flex; }   /* la tuile remplit toute la cellule : hauteurs égales par ligne */
 
 .tuile {
@@ -640,6 +641,110 @@ body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.
   padding-left: 0.2rem;
 }
 .perso-actions .lien-prenom { font-size: 0.95rem; padding: 0.05rem 0.3rem; margin: 0; }
+
+/* ---------- Téléphone ---------- */
+/* Le bouton « Réglages » et la barre fixe n'existent que sur téléphone. */
+#btn-reglages { display: none; }
+.pied-mobile { display: none; }
+.banniere-ios-texte { margin: 0; font-size: 1.05rem; line-height: 1.35; text-align: left; max-width: 30rem; }
+
+/*
+ * Mise en page téléphone : portrait jusqu'à 600 px, ou téléphone en paysage
+ * (pointeur grossier + hauteur réduite). C'est un agencement dédié, pas un
+ * rétrécissement : barre fixe en bas, réglages repliés, 2 colonnes de tuiles.
+ */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+
+  /* En-tête compact : prénom/titre + heure/date, rien d'autre */
+  .entete {
+    padding: calc(0.5rem + env(safe-area-inset-top)) calc(0.75rem + env(safe-area-inset-right))
+             0.2rem calc(0.75rem + env(safe-area-inset-left));
+    align-items: flex-start;
+    gap: 0.3rem 1rem;
+  }
+  .titre { font-size: 1.35rem; }
+  .date { font-size: 1rem; margin-top: 0.05rem; }
+  .heure { font-size: 1.5rem; }
+  .lien-prenom { font-size: 0.85rem; margin: 0; padding: 0.05rem 0.2rem; }
+  .entete-droite { align-items: flex-end; gap: 0.3rem; }
+
+  /* « Réglages » : bouton libellé qui déplie le panneau, jamais d'icône seule */
+  #btn-reglages { display: inline-block; }
+  .reglages { display: none; justify-content: flex-end; }
+  .reglages.ouvert { display: flex; }
+
+  #contenu { padding: 0 0.75rem; }
+  .retour-accueil { margin: 0 0.75rem 0.75rem; padding: 0.7rem 0.9rem; font-size: 1.1rem; }
+  .banniere-install { padding: 0.3rem 0.75rem 0.75rem; }
+  .banniere-install .bouton { min-height: 3.5rem; }
+
+  /* 2 colonnes de grosses tuiles, cibles tactiles de 56 px minimum */
+  .tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+  .tuile {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 5.5rem;      /* 88 px, très au-dessus des 56 px */
+    padding: 0.6rem 0.4rem;
+    text-align: center;
+  }
+  .tuile-label { font-size: 1.05rem; line-height: 1.2; }
+  .tuile .icone { width: 2.3rem; height: 2.3rem; padding: 0.42rem; }
+  .groupe-titre { font-size: 1rem; margin: 0.6rem 0 0.15rem; }
+  .perso-actions { flex-direction: column; gap: 0.25rem; align-items: flex-start; }
+
+  /* Tous les contrôles : cibles de 56 px, pensées pour le pouce */
+  .bouton, .dialog .bouton { min-height: 3.5rem; }
+  .bouton.bouton-reglage { min-height: 3.5rem; font-size: 1rem; padding: 0.4rem 1rem; }
+  .ligne-verif { flex-direction: column; }
+  .ligne-verif .bouton { width: 100%; }
+
+  /* Barre toujours visible en bas : « sticky » la colle au bas de l'écran
+     sans jamais recouvrir le contenu, quelle que soit la taille de texte */
+  .pied {
+    flex-direction: row;
+    padding: 0.5rem calc(0.75rem + env(safe-area-inset-right))
+             calc(0.5rem + env(safe-area-inset-bottom)) calc(0.75rem + env(safe-area-inset-left));
+    border-top: 0.12rem solid var(--bordure);
+  }
+  .pied-mobile { display: flex; gap: 0.6rem; width: 100%; align-items: stretch; }
+  .pied-mobile .bouton { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; }
+  #btn-appeler {
+    flex: 3;
+    min-height: 4rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: var(--rayon);
+  }
+  #btn-appeler .icone { width: 1.8rem; height: 1.8rem; }
+  .bouton-bizarre-bar {
+    flex: 2;
+    min-height: 4rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border-radius: var(--rayon);
+  }
+  /* Le bouton d'aide de bureau et la note discrète ne sont pas sur téléphone */
+  .pied > .bouton-aide, .pied > .bandeau { display: none; }
+
+  /* Dialogs adaptés au téléphone : pleine largeur, lisibles au pouce */
+  .dialog { width: 94vw; max-height: 88dvh; padding: 1.2rem; }
+  .dialog-ajout { width: 94vw; }
+  .catalogue-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .icones-grille { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .aide-telephone { width: 100%; }
+  .panneau-tech { padding: 0.5rem; }
+}
+
+/* Très petits écrans (< 360 px) ou taille de texte maximale : une colonne */
+@media (max-width: 359px) {
+  .tuiles { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  html.taille-3 .tuiles { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* Dialog des palettes : grosses cartes d'aperçu, chacune teintée de sa palette */
 .dialog-palette { max-width: 46rem; }

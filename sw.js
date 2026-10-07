@@ -5,7 +5,7 @@
    officiels s'ouvrent dans un nouvel onglet, hors de la portée du SW).
    Incrémentez VERSION à chaque mise à jour des fichiers.
    ===================================================================== */
-var VERSION = 'monaccueil-v8';
+var VERSION = 'monaccueil-v9';
 var FICHIERS = [
   './',
   './index.html',

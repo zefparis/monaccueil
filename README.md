@@ -129,6 +129,17 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   `window.open` fonctionnent toujours. Sécurité : `w.opener` est coupé
   immédiatement (l'isolation `noopener` est préservée ; sans elle, la fenêtre
   nommée ne pourrait pas être réutilisée).
+- `ouvertureMobile` : `"onglet"` (défaut) ou `"memeOnglet"`. Sur téléphone —
+  détecté par **capacités** (pointeur grossier, écran étroit ou tactile
+  principal, jamais par user-agent) — il n'y a pas de fenêtre dédiée : le lien
+  natif `target="_blank" rel="noopener noreferrer"` s'applique, ce qui laisse le
+  téléphone ouvrir l'application officielle s'il le souhaite. Avec
+  `"memeOnglet"`, le site s'ouvre dans l'onglet courant et la flèche retour du
+  téléphone ramène à l'accueil. Le bandeau de retour est adapté au tactile.
+- `lienVisio` *(facultatif, vide par défaut)* : adresse `https://` d'appel
+  vidéo, limitée aux domaines de `domainesOfficiels` (même validation que les
+  tuiles). Si renseigné, un bouton « Rejoindre l'appel vidéo » apparaît dans
+  « Besoin d'aide ? » sur téléphone uniquement.
 - `palette` *(facultatif)* : couleurs par défaut parmi `chaleureux` (défaut),
   `bleu`, `vert`, `violet`, `rose`, `gris`. La personne peut en choisir une
   autre via le lien « Changer les couleurs » (stockée dans `localStorage`,
@@ -346,6 +357,21 @@ choisi (code à taper pour Assistance rapide, code à lire pour RustDesk).
 - Notez chaque intervention (date, durée, motif) dans l'onglet Journal (§ 4 bis) et
   exportez-le dans la fiche client.
 
+### Sur téléphone
+
+Sur téléphone, la tuile devient « Besoin d'aide ? » et affiche 3 étapes simples :
+appeler le technicien, décrire ce qui s'affiche, partager l'écran en appel vidéo
+uniquement si le technicien le demande (bouton « Rejoindre l'appel vidéo » si
+`lienVisio` est renseigné). Il n'y a **pas** de prise de contrôle à distance sur
+téléphone dans l'application :
+
+- **Android** : RustDesk existe sur Android, mais il doit être **installé et
+  autorisé par la personne elle-même**, à chaque session — jamais d'accès
+  permanent ni de démarrage automatique.
+- **iPhone** : Apple n'autorise pas le contrôle à distance — seule l'appel vidéo
+  avec partage d'écran est possible.
+- Le consentement est toujours **oral** et à l'initiative de la personne.
+
 ---
 
 ## 6. Tuile « Un message me paraît bizarre »
@@ -367,6 +393,16 @@ un clic affiche une grande fenêtre en 4 blocs, utilisable au clavier (Tab, Entr
    inhabituel, raccourcisseur, schéma non web (`mailto:`, `javascript:`), adresse
    malformée ou texte avec espaces. Majuscules, espaces autour, guillemets, port `:443`,
    adresse sans `https://` et chemins longs sont tolérés.
+   - **Bouton « Coller l'adresse »** : lit le presse-papiers
+     (`navigator.clipboard.readText`, sur action directe uniquement) puis lance
+     la vérification. Si la permission est refusée ou l'API absente, le collage
+     manuel (appui long → Coller) reste la voie normale.
+   - **« Partager vers Mon Accueil » (Android)** : le manifest déclare un
+     `share_target` (`GET`, paramètres `url` et `text`). Partager un lien ou un
+     message vers l'application ouvre directement le vérificateur, pré-rempli :
+     l'adresse reçue est tronquée à 2048 caractères, extraite du texte
+     environnant, soumise au même vérificateur, **jamais ouverte ni stockée**,
+     et retirée de la barre d'adresse (`history.replaceState`).
    - **Vert** : « Cette adresse est bien celle d'un site officiel de la liste. » suivi,
      toujours, de « Attention : le site est le vrai, mais le message qui vous l'a envoyé
      peut quand même être une arnaque. En cas de doute, appelez-moi. »

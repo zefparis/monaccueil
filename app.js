@@ -30,6 +30,8 @@
 
   // Ouverture des sites : fenêtre dédiée à droite, ou nouvel onglet
   var OUVERTURES = ['fenetre', 'onglet'];
+  // Sur téléphone : pas de fenêtre dédiée — onglet (défaut) ou même onglet (retour arrière)
+  var OUVERTURES_MOBILE = ['onglet', 'memeOnglet'];
   var RATIO_FENETRE = 0.75;            // la fenêtre occupe ~75 % de la largeur, 25 % reste pour l'accueil
   var LARGEUR_MIN_FENETRE = 1000;      // écran plus étroit : nouvel onglet (la moitié visible serait trop petite)
   var DELAI_BANDEAU_RETOUR = 45000;    // le message de retour s'efface aussi tout seul (ms)
@@ -48,6 +50,7 @@
   var CLE_PERSO = 'monaccueil.perso';             // cases ajoutées par la personne (JSON)
   // Compteur anonyme des ajouts refusés par le vérificateur (aucun contenu conservé)
   var CLE_STAT_REFUS = 'monaccueil.stat.ajouts-refuses';
+  var CLE_INSTALL_IOS = 'monaccueil.install-ios.ferme';
 
   // Prénom : lettres (accents compris), espaces, tiret, apostrophe ; commence par une lettre ; 30 max
   var REGEX_PRENOM = /^[\p{L}][\p{L} '\-]*$/u;
@@ -322,6 +325,15 @@
       // false = mode technicien totalement désactivé (instance publique de démo) ; absent ou autre valeur = actif
       modeTechnicien: typeof c.modeTechnicien === 'boolean' ? c.modeTechnicien : true,
       ouvertureSites: OUVERTURES.indexOf(c.ouvertureSites) !== -1 ? c.ouvertureSites : 'fenetre',
+      ouvertureMobile: OUVERTURES_MOBILE.indexOf(c.ouvertureMobile) !== -1 ? c.ouvertureMobile : 'onglet',
+      // Lien d'appel vidéo facultatif : https + domaine de la liste officielle (comme toute tuile)
+      lienVisio: (function () {
+        var v = typeof c.lienVisio === 'string' ? c.lienVisio.trim() : '';
+        if (!v) { return ''; }
+        var a = analyserUrl(v);
+        var domaines = listeDomaines(Array.isArray(c.domainesOfficiels) ? c.domainesOfficiels : []);
+        return a.ok && domaineOfficiel(a.hote, domaines) ? v : '';
+      })(),
       // Couleurs par défaut du technicien et règle d'ajout de cases par la personne (listes blanches)
       palette: PALETTES.indexOf(c.palette) !== -1 ? c.palette : PALETTE_DEFAUT,
       ajoutParPersonne: AJOUTS.indexOf(c.ajoutParPersonne) !== -1 ? c.ajoutParPersonne : 'libre',
@@ -476,12 +488,24 @@
     remplirLienTelephone($('aide-telephone'));
     afficherAideDistance();
     afficherBizarre();
+    // Barre fixe du téléphone : « Appeler [prénom du technicien] » en lien tel: natif
+    remplirLienAppel($('btn-appeler'));
   }
 
   /** Textes des étapes 2 à 4 selon l'outil choisi et le mode d'hébergement
       (file:// : raccourci Bureau ; https : l'outil se lance depuis le menu Démarrer). */
   function afficherAideDistance() {
     remplirLienTelephone($('distance-telephone'));
+    var mobile = estMobile();
+    // Sur téléphone : pas de contrôle à distance, 3 étapes simples + visio éventuelle
+    $('distance-desktop').hidden = mobile;
+    $('distance-mobile').hidden = !mobile;
+    $('distance-titre').textContent = mobile ? 'Besoin d\'aide ?' : 'Aide à distance : 4 étapes';
+    if (mobile) { remplirLienTelephone($('distance-telephone-mobile')); }
+    var visio = $('btn-visio');
+    if (mobile && config.lienVisio) { visio.href = config.lienVisio; visio.hidden = false; }
+    else { visio.hidden = true; }
+    if (mobile) { return; }
     var outil = config.aideDistance.outil;
     $('distance-etape-lancer').textContent = location.protocol === 'file:'
       ? 'Double-cliquez sur l\'icône « Aide à distance » sur votre Bureau.'
@@ -503,6 +527,18 @@
      « onglet ». window.open n'hérite pas de rel=noopener : on coupe
      w.opener soi-même tout de suite (la sécurité prime sur la réutilisation).
      ------------------------------------------------------------------ */
+
+  /**
+   * Vrai si l'appareil se comporte comme un téléphone : pointeur grossier
+   * (tactile), écran étroit, ou écran tactile principal. Jamais d'analyse
+   * du user-agent — uniquement des capacités mesurables.
+   */
+  function estMobile() {
+    var mm = window.matchMedia ? function (q) { return window.matchMedia(q).matches; } : function () { return false; };
+    if (mm('(pointer: coarse)')) { return true; }
+    if (mm('(max-width: 600px)')) { return true; }
+    return 'ontouchstart' in window && Math.min(screen.width, screen.height) < 1024;
+  }
 
   /** Position/taille de la fenêtre pour un écran donné ; null si trop étroit. */
   function calculerFenetre(largeurEcran, hauteurEcran, gaucheBase) {
@@ -538,7 +574,9 @@
     var b = $('retour-accueil');
     b.textContent = type === 'fenetre'
       ? 'Votre site s\'est ouvert sur la droite. Pour revenir ici : fermez-le avec la croix en haut à droite.'
-      : 'Votre site s\'est ouvert dans un autre onglet. Pour revenir ici : fermez-le avec la croix de l\'onglet.';
+      : type === 'mobile'
+        ? 'Votre site s\'est ouvert. Pour revenir ici : touchez la flèche retour de votre téléphone, ou fermez l\'onglet.'
+        : 'Votre site s\'est ouvert dans un autre onglet. Pour revenir ici : fermez-le avec la croix de l\'onglet.';
     b.hidden = false;
     if (minuteurRetour) { clearTimeout(minuteurRetour); }
     minuteurRetour = setTimeout(masquerRetour, DELAI_BANDEAU_RETOUR);
@@ -576,6 +614,14 @@
       ]);
       lien.style.setProperty('--couleur', t.couleur);
       lien.addEventListener('click', function (ev) {
+        // Téléphone : pas de fenêtre dédiée. « memeOnglet » navigue dans l'onglet courant
+        // (la flèche retour du téléphone ramène à l'accueil) ; « onglet » = lien natif,
+        // ce qui laisse le téléphone ouvrir l'application officielle s'il le souhaite.
+        if (estMobile()) {
+          if (config.ouvertureMobile === 'memeOnglet') { ev.preventDefault(); location.href = t.url; return; }
+          afficherRetour('mobile');
+          return;
+        }
         if (config.ouvertureSites === 'onglet') { afficherRetour('onglet'); return; }  // lien normal : target=_blank
         if (ouvrirSite(t.url)) { ev.preventDefault(); afficherRetour('fenetre'); }
         else { afficherRetour('onglet'); }  // bloqué ou écran étroit : le lien target=_blank fait le travail
@@ -586,11 +632,12 @@
     // Les deux tuiles fixes finissent dans « Aide et sécurité »
     function creerTuilesSpeciales() {
       var items = [];
-      // Tuile fixe "Aide à distance" : ouvre une fenêtre d'explications, pas un site
+      // Tuile fixe "Aide à distance" : ouvre une fenêtre d'explications, pas un site.
+      // Sur téléphone : « Besoin d'aide ? », pas de contrôle à distance mobile.
       if (config.aideDistance.actif) {
         var bouton = el('button', { type: 'button', 'class': 'tuile tuile-distance' }, [
           creerIcone('assistance.svg', COULEUR_DISTANCE),
-          el('span', { 'class': 'tuile-label', text: 'Aide à distance' })
+          el('span', { 'class': 'tuile-label', text: estMobile() ? 'Besoin d\'aide ?' : 'Aide à distance' })
         ]);
         bouton.style.setProperty('--couleur', COULEUR_DISTANCE);
         bouton.addEventListener('click', function () { ouvrirDialog($('dialog-distance')); $('btn-fermer-distance').focus(); });
@@ -734,9 +781,52 @@
     }
   }
 
+  /**
+   * Share target (manifest « Partager vers Mon Accueil ») : l'adresse reçue
+   * dans ?url= ou ?text= est traitée comme une saisie normale du vérificateur.
+   * Jamais ouverte, jamais stockée ; le texte est tronqué à 2048 caractères,
+   * une éventuelle adresse au milieu du texte est extraite, puis la query
+   * est nettoyée de la barre d'adresse (history.replaceState).
+   */
+  function traiterPartage() {
+    var brut = '';
+    try {
+      var q = new URLSearchParams(location.search);
+      brut = (q.get('url') || q.get('text') || q.get('title') || '').slice(0, 2048);
+    } catch (e) { brut = ''; }
+    if (!brut) { return; }
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* file: ou repli */ }
+    // Extrait une adresse au milieu du texte reçu ; sinon le texte brut est
+    // soumis tel quel au vérificateur (javascript:, data:, etc. → danger)
+    var m = brut.match(/https?:\/\/[^\s"'<>()]+/i) || brut.match(/[^\s"'<>()]{2,}\.[a-z]{2,}[^\s"'<>()]*/i);
+    var d = $('dialog-bizarre');
+    ouvrirDialog(d);
+    $('champ-adresse').value = m ? m[0] : brut;
+    verifierAdresseSaisie();
+    $('btn-fermer-bizarre').focus();
+  }
+
   function initBizarre() {
     var d = $('dialog-bizarre');
     $('form-verif').addEventListener('submit', function (ev) { ev.preventDefault(); verifierAdresseSaisie(); });
+    // Barre fixe du téléphone : raccourci direct vers le vérificateur
+    var raccourci = $('btn-bizarre-bar');
+    if (raccourci) { raccourci.addEventListener('click', function () { ouvrirDialog(d); $('champ-adresse').focus(); }); }
+    // « Coller l'adresse » : Clipboard API uniquement sur action directe de la personne
+    var coller = $('btn-coller');
+    if (coller) {
+      coller.addEventListener('click', function () {
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+          $('champ-adresse').focus();
+          return;  // Repli : collage manuel (appui long dans le champ, « Coller »)
+        }
+        navigator.clipboard.readText().then(function (texte) {
+          if (!texte) { return; }
+          $('champ-adresse').value = texte.slice(0, 2048);
+          verifierAdresseSaisie();
+        }).catch(function () { $('champ-adresse').focus(); });  // refusé : collage manuel
+      });
+    }
     function fermer() {
       fermerDialog(d);
       viderVerification();
@@ -797,6 +887,14 @@
     $('btn-contraste').addEventListener('click', function () {
       appliquerContraste(!document.documentElement.classList.contains('contraste-eleve'));
     });
+    // Sur téléphone, le bouton « Réglages » replie/déplie le panneau
+    var br = $('btn-reglages');
+    if (br) {
+      br.addEventListener('click', function () {
+        var ouvert = $('reglages').classList.toggle('ouvert');
+        br.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+      });
+    }
   }
 
   /* ------------------------------------------------------------------
@@ -834,10 +932,31 @@
 
   var installEvent = null;
 
+  /**
+   * Vrai sur iPhone/iPad. Le mobile est détecté par capacités ; ici on a
+   * besoin de savoir que c'est Safari-iOS, car seul lui n'a pas d'événement
+   * d'installation et exige le geste « Partager → Sur l'écran d'accueil ».
+   */
+  function estIOS() {
+    return /iP(hone|ad|od)/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
   function initInstall() {
     var banniere = $('banniere-install');
-    if (!banniere || lireStockage(CLE_INSTALL) === '1') { return; }
-    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) { return; }
+    var installe = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || navigator.standalone === true;
+    // iPhone : pas d'événement d'installation → instructions écrites, fermables à jamais
+    if (estIOS() && !installe && lireStockage(CLE_INSTALL_IOS) !== '1') {
+      var ios = $('banniere-ios');
+      if (ios) { ios.hidden = false; }
+    }
+    $('btn-ios-fermer').addEventListener('click', function () {
+      var ios = $('banniere-ios');
+      if (ios) { ios.hidden = true; }
+      ecrireStockage(CLE_INSTALL_IOS, '1');
+    });
+    if (!banniere || lireStockage(CLE_INSTALL) === '1' || installe) { return; }
     window.addEventListener('beforeinstallprompt', function (ev) {
       ev.preventDefault();
       installEvent = ev;
@@ -1226,6 +1345,8 @@
     brouillon.aideDistance.outil = p.querySelector('[name="distance-outil"]').value;
     brouillon.aideDistance.idRustdesk = p.querySelector('[name="distance-id"]').value.replace(/[^0-9]/g, '');
     brouillon.ouvertureSites = p.querySelector('[name="ouverture-sites"]').value;
+    brouillon.ouvertureMobile = p.querySelector('[name="ouverture-mobile"]').value;
+    brouillon.lienVisio = p.querySelector('[name="lien-visio"]').value.trim();
     brouillon.palette = p.querySelector('[name="palette-defaut"]').value;
     brouillon.ajoutParPersonne = p.querySelector('[name="ajout-personne"]').value;
     brouillon.domainesOfficiels = lireListeTexte(p.querySelector('[name="domaines"]').value);
@@ -1254,6 +1375,12 @@
     }
     if (!brouillon.technicien.telephone) { erreurs.push('Le numéro de téléphone du technicien est vide.'); }
     if (OUVERTURES.indexOf(brouillon.ouvertureSites) === -1) { brouillon.ouvertureSites = 'fenetre'; }
+    if (OUVERTURES_MOBILE.indexOf(brouillon.ouvertureMobile) === -1) { brouillon.ouvertureMobile = 'onglet'; }
+    if (brouillon.lienVisio) {
+      var av = analyserUrl(brouillon.lienVisio);
+      if (!av.ok) { erreurs.push('Lien d\'appel vidéo : adresse illisible ou sans https (https://… obligatoire).'); }
+      else if (!domaineOfficiel(av.hote, domainesReconnus())) { erreurs.push('Lien d\'appel vidéo : « ' + av.hote + ' » n\'est pas un domaine de la liste officielle.'); }
+    }
     if (PALETTES.indexOf(brouillon.palette) === -1) { brouillon.palette = PALETTE_DEFAUT; }
     if (AJOUTS.indexOf(brouillon.ajoutParPersonne) === -1) { brouillon.ajoutParPersonne = 'libre'; }
     if (OUTILS_DISTANCE.indexOf(brouillon.aideDistance.outil) === -1) { brouillon.aideDistance.outil = 'quickassist'; }
@@ -1649,8 +1776,18 @@
       if (o[0] === brouillon.ouvertureSites) { opt.selected = true; }
       selOuverture.appendChild(opt);
     });
+    var selOuvertureMobile = el('select', { id: 'tech-ouverture-mobile', name: 'ouverture-mobile' });
+    [['onglet', 'Dans un nouvel onglet (l\'application officielle peut s\'ouvrir) — recommandé'],
+     ['memeOnglet', 'Dans le même onglet (la flèche retour du téléphone ramène ici)']].forEach(function (o) {
+      var opt = el('option', { value: o[0], text: o[1] });
+      if (o[0] === brouillon.ouvertureMobile) { opt.selected = true; }
+      selOuvertureMobile.appendChild(opt);
+    });
     p.appendChild(el('div', { 'class': 'champs' }, [
-      el('label', { 'for': 'tech-ouverture' }, ['Quand on clique un bouton, le site s\'ouvre', selOuverture])]));
+      el('label', { 'for': 'tech-ouverture' }, ['Quand on clique un bouton, le site s\'ouvre', selOuverture]),
+      el('label', { 'for': 'tech-ouverture-mobile' }, ['Sur téléphone, le site s\'ouvre', selOuvertureMobile]),
+      el('label', { 'for': 'tech-visio' }, ['Lien d\'appel vidéo sur téléphone (facultatif, https, domaine de la liste officielle)',
+        el('input', { id: 'tech-visio', name: 'lien-visio', type: 'text', value: brouillon.lienVisio || '', placeholder: 'https://…' })])]));
 
     // Couleurs par défaut et règle d'ajout de boutons par la personne
     var selPalette = el('select', { id: 'tech-palette', name: 'palette-defaut' });
@@ -2117,9 +2254,12 @@
         if (dAjout) { dAjout.remove(); }
         if (dRetrait) { dRetrait.remove(); }
       } else { initAjout(); initRetrait(); }
+      // « Partager vers Mon Accueil » (share_target) : pré-remplit le vérificateur
+      traiterPartage();
       // Premier lancement : demander le prénom seulement si ni choisi ni configuré,
-      // et pas déjà repoussé à « plus tard »
-      if (!prenomEffectif() && lireStockage(CLE_PRENOM_PLUSTARD) !== '1') { ouvrirPrenom(); }
+      // et pas déjà repoussé à « plus tard » — et sans recouvrir le vérificateur
+      if (!document.querySelector('dialog[open]')
+        && !prenomEffectif() && lireStockage(CLE_PRENOM_PLUSTARD) !== '1') { ouvrirPrenom(); }
       // modeTechnicien : false (démo publique) = aucun geste, aucun code du panneau construit
       if (config.modeTechnicien !== false) { initAppuiLong(); initPin(); }
     });

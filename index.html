@@ -2,7 +2,7 @@
 <html lang="fr" class="taille-1">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <!-- CSP stricte : aucun script/style externe, aucun inline, aucun eval, aucune requête sortante -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
@@ -29,8 +29,10 @@
     </div>
     <div class="entete-droite">
       <p id="heure" class="heure" aria-label="Heure actuelle"></p>
+      <!-- Sur téléphone : le panneau de réglages se replie derrière ce bouton libellé -->
+      <button type="button" id="btn-reglages" class="bouton bouton-reglage" aria-expanded="false" aria-controls="reglages">Réglages</button>
       <!-- Réglages d'affichage : discrets, libellés écrits en toutes lettres -->
-      <nav class="reglages" aria-label="Réglages d'affichage">
+      <nav class="reglages" id="reglages" aria-label="Réglages d'affichage">
         <button type="button" id="btn-taille-moins" class="bouton bouton-reglage">Texte plus petit</button>
         <button type="button" id="btn-taille-plus" class="bouton bouton-reglage">Texte plus grand</button>
         <button type="button" id="btn-contraste" class="bouton bouton-reglage" aria-pressed="false">Contraste</button>
@@ -43,8 +45,15 @@
        affichée par app.js uniquement si le navigateur la propose et que la personne
        ne l'a pas déjà installée ou fermée -->
   <div id="banniere-install" class="banniere-install" hidden>
-    <button type="button" id="btn-install" class="bouton">Installer Mon Accueil sur cet ordinateur</button>
+    <button type="button" id="btn-install" class="bouton">Ajouter Mon Accueil à l'écran d'accueil</button>
     <button type="button" id="btn-install-fermer" class="bouton banniere-fermer" aria-label="Ne plus proposer l'installation">✕</button>
+  </div>
+
+  <!-- iPhone : pas d'événement d'installation, on montre les instructions écrites.
+       Affiché par app.js uniquement sur iOS, tant que l'app n'est pas installée. -->
+  <div id="banniere-ios" class="banniere-install" hidden>
+    <p class="banniere-ios-texte">Pour garder Mon Accueil sur votre téléphone : touchez le bouton <strong>Partager</strong> (le carré avec une flèche), puis <strong>« Sur l'écran d'accueil »</strong>.</p>
+    <button type="button" id="btn-ios-fermer" class="bouton banniere-fermer" aria-label="Ne plus afficher ce message">✕</button>
   </div>
 
   <!-- Message de retour après ouverture d'un site : expliqué à voix haute à l'écran -->
@@ -62,6 +71,11 @@
   </main>
 
   <footer class="pied">
+    <!-- Barre fixe du téléphone : appel direct + vérificateur, pouce atteignable -->
+    <div class="pied-mobile">
+      <a id="btn-appeler" class="bouton bouton-aide" href="#"><span id="appeler-icone"></span><span id="appeler-label">Appeler</span></a>
+      <button type="button" id="btn-bizarre-bar" class="bouton bouton-bizarre-bar">Un message bizarre ?</button>
+    </div>
     <button type="button" id="btn-aide" class="bouton bouton-aide">
       <span id="aide-icone"></span>
       J'ai besoin d'aide
@@ -79,10 +93,11 @@
     <button type="button" id="btn-fermer-aide" class="bouton bouton-principal">Fermer</button>
   </dialog>
 
-  <!-- Fenêtre "Aide à distance" : 4 étapes, le senior initie et accepte toujours la connexion -->
+  <!-- Fenêtre "Aide à distance" : 4 étapes, le senior initie et accepte toujours la connexion.
+       Sur téléphone, le bloc mobile (3 étapes, appel d'abord) remplace ce contenu. -->
   <dialog id="dialog-distance" class="dialog dialog-distance" aria-labelledby="distance-titre">
     <h2 id="distance-titre">Aide à distance : 4 étapes</h2>
-    <ol class="etapes">
+    <ol class="etapes" id="distance-desktop">
       <li>
         <span class="etape-texte">Appelez-moi d'abord au</span>
         <a id="distance-telephone" class="aide-telephone" href="#"></a>
@@ -91,6 +106,16 @@
       <li><span class="etape-texte" id="distance-etape-code"></span></li>
       <li><span class="etape-texte" id="distance-etape-accepter"></span></li>
     </ol>
+    <!-- Version téléphone : aucun contrôle à distance, appel + description + visio -->
+    <ol class="etapes" id="distance-mobile" hidden>
+      <li>
+        <span class="etape-texte">Appelez-moi d'abord au</span>
+        <a id="distance-telephone-mobile" class="aide-telephone" href="#"></a>
+      </li>
+      <li><span class="etape-texte">Décrivez-moi ce que vous voyez à l'écran.</span></li>
+      <li><span class="etape-texte">Si je vous le demande, vous pourrez me montrer votre écran en appel vidéo — uniquement si je le demande.</span></li>
+    </ol>
+    <a id="btn-visio" class="bouton bouton-principal" href="#" target="_blank" rel="noopener noreferrer" hidden>Rejoindre l'appel vidéo</a>
     <p class="protection">Je ne vous demanderai jamais d'ouvrir l'aide à distance sans que vous m'ayez appelé. Si quelqu'un d'autre vous le demande, refusez et raccrochez.</p>
     <button type="button" id="btn-fermer-distance" class="bouton bouton-principal">Fermer</button>
   </dialog>
@@ -107,6 +132,7 @@
         <li>Ce message est-il inattendu ?</li>
       </ol>
       <p class="protection">Si la réponse est oui à UNE seule question : ne cliquez pas, ne répondez pas, appelez-moi.</p>
+      <p class="protection">Ne donnez jamais un code reçu par SMS. Ne scannez pas un QR code reçu par message. Une banque ne vous demande jamais de code par téléphone.</p>
     </section>
 
     <section class="bloc" aria-labelledby="bizarre-v-titre">
@@ -115,6 +141,7 @@
         <label for="champ-adresse">Collez ici l'adresse du site (le lien ne sera jamais ouvert) :</label>
         <div class="ligne-verif">
           <input id="champ-adresse" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.exemple.fr">
+          <button type="button" id="btn-coller" class="bouton">Coller l'adresse</button>
           <button type="submit" class="bouton bouton-principal">Vérifier</button>
         </div>
       </form>

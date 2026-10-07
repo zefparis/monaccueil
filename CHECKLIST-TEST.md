@@ -239,3 +239,61 @@ Cochez chaque ligne. Durée : environ 15 minutes.
 - [ ] Page de démarrage du navigateur réglée sur l'adresse (secours).
 - [ ] **Temps mesuré** de l'installation : ______ minutes (objectif < 2).
 - [ ] Même contrôle **dans Edge et Firefox**.
+
+## L. Version téléphone (à vérifier sur un vrai Android ET un vrai iPhone)
+
+### L1. Mise en page
+
+- [ ] 2 colonnes de tuiles en portrait ; 1 colonne si « Texte plus grand » ×2
+      (taille maximale) ou écran très étroit (< 360 px).
+- [ ] En-tête compact : prénom, heure, date lisibles d'emblée.
+- [ ] Aucune barre de défilement horizontale, y compris en paysage.
+- [ ] « Réglages » : un bouton écrit déplie le panneau (taille, contraste,
+      couleurs) ; jamais d'icône seule.
+- [ ] Barre du bas toujours visible : « Appeler [technicien] » en rouge plein
+      lance l'app Téléphone (lien `tel:`) ; « Un message bizarre ? » ouvre le
+      vérificateur. Le numéro est aussi écrit en clair dans le dialog d'aide.
+
+### L2. Ouverture des sites
+
+- [ ] Un clic de tuile ouvre le site dans un nouvel onglet (ou l'application
+      officielle si le téléphone la propose) — jamais de fenêtre latérale.
+- [ ] Bandeau de retour adapté (« flèche retour… ou fermez l'onglet »).
+- [ ] Config `ouvertureMobile: "memeOnglet"` : le site s'ouvre dans l'onglet
+      courant, la flèche retour ramène à l'accueil.
+
+### L3. Installation
+
+- [ ] Android (Chrome) : bannière « Ajouter Mon Accueil à l'écran d'accueil » →
+      icône installée, ouverture plein écran ; la bannière ne revient pas après ✕.
+- [ ] iPhone (Safari) : l'encart « Touchez Partager, puis Sur l'écran d'accueil »
+      s'affiche tant que l'app n'est pas installée ; il disparaît une fois
+      installée (standalone) et après ✕.
+- [ ] L'icône installée est nette (manifest : `display: standalone`, icônes
+      maskable, `orientation: any`).
+
+### L4. Vérificateur facilité
+
+- [ ] Android : depuis un SMS/message, « Partager » → Mon Accueil → le
+      vérificateur s'ouvre pré-rempli ; l'adresse n'est jamais ouverte et
+      disparaît de la barre d'adresse. Tester : lien valide, texte avec adresse
+      au milieu, `javascript:`, très long, vide.
+- [ ] « Coller l'adresse » remplit le champ après autorisation ; si refusée,
+      appui long → Coller fonctionne.
+- [ ] Les conseils s'affichent en gros : « Ne donnez jamais un code reçu par
+      SMS. Ne scannez pas un QR code reçu par message. Une banque ne vous
+      demande jamais de code par téléphone. »
+- [ ] Les arnaques listées couvrent : faux SMS de livraison, faux SMS Ameli /
+      carte Vitale, faux appel de la banque, faux proche en difficulté sur
+      WhatsApp.
+
+### L5. Aide et mode technicien
+
+- [ ] La tuile s'appelle « Besoin d'aide ? » et donne 3 étapes (appeler →
+      décrire → partager l'écran en visio seulement si demandé). Si `lienVisio`
+      est configuré (https + domaine de la liste officielle), le bouton
+      « Rejoindre l'appel vidéo » apparaît.
+- [ ] Appui long de 3 s sur le titre au doigt : dialog PIN sans menu
+      contextuel ni sélection de texte ; le champ PIN n'est pas masqué par le
+      clavier virtuel ; le panneau reste utilisable au tactile.
+- [ ] `modeTechnicien: false` : l'appui long ne fait rien.
