@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- CSP stricte, comme l'application : aucun script/style externe -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>Mon Accueil — mode d'emploi</title>
+  <link rel="stylesheet" href="fiche-senior.css">
+</head>
+<body>
+  <h1>Mon Accueil — votre mode d'emploi</h1>
+  <p class="intro">Ces gros boutons ouvrent uniquement les vrais sites officiels.
+     En cas de doute, appelez-moi avant de cliquer.</p>
+
+  <ol class="etapes">
+    <li>
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" data-icone="administration.svg" data-couleur="#1d4ed8" aria-hidden="true"></span>
+      <span class="texte"><strong>Cliquez sur un gros bouton.</strong>
+        Il ouvre le site officiel dans un nouvel onglet.</span>
+    </li>
+    <li>
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 32L32 16l18 16"/><path d="M19 30v18h26V30"/><path d="M28 48V38h8v10"/></svg>
+      </span>
+      <span class="texte"><strong>Pour revenir à l'accueil :</strong>
+        cliquez sur le premier onglet, ou fermez l'onglet ouvert.</span>
+    </li>
+    <li class="rouge">
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" data-icone="aide.svg" data-couleur="#b91c1c" aria-hidden="true"></span>
+      <span class="texte"><strong>Le bouton rouge « J'ai besoin d'aide »</strong>
+        affiche mon numéro de téléphone.</span>
+    </li>
+    <li>
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" data-icone="bouclier.svg" data-couleur="#9a3412" aria-hidden="true"></span>
+      <span class="texte"><strong>« Un message me paraît bizarre »</strong>
+        <span class="detail">Un message vous met la pression ? Ne cliquez pas.
+        Ouvrez ce bouton ou appelez-moi.</span></span>
+    </li>
+    <li>
+      <span class="num" aria-hidden="true"></span>
+      <span class="picto" data-icone="assistance.svg" data-couleur="#a21caf" aria-hidden="true"></span>
+      <span class="texte"><strong>« Aide à distance »</strong>
+        <span class="detail">Uniquement si je vous l'ai demandé par téléphone.</span></span>
+    </li>
+  </ol>
+
+  <div class="telephone">
+    <p class="qui">Votre technicien : <strong id="fiche-nom">…</strong></p>
+    <a class="numero" id="fiche-telephone" href="#"></a>
+    <p class="bete">Appelez-moi, même pour une question qui vous paraît bête.</p>
+  </div>
+
+  <p class="rappel">Je ne vous demanderai jamais un mot de passe ou un code bancaire.</p>
+
+  <!-- Même jeu d'icônes que l'application, et nom/numéro lus dans config.js -->
+  <script src="../icones.js"></script>
+  <script src="../config.js"></script>
+  <script src="fiche-senior.js"></script>
+</body>
+</html>

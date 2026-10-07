@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr" class="taille-1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- CSP stricte : aucun script/style externe, aucun inline, aucun eval, aucune requête sortante -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#1d4ed8">
+  <title>Mon Accueil</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/app.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/app.svg">
+</head>
+<body>
+  <!-- Lien d'évitement pour la navigation clavier -->
+  <a class="evitement" href="#tuiles">Aller aux boutons</a>
+
+  <header class="entete">
+    <div class="entete-texte">
+      <!-- Appui long de 3 secondes sur ce titre = accès au mode technicien (geste volontairement discret) -->
+      <h1 id="titre" class="titre">Bonjour</h1>
+      <p id="date" class="date" aria-live="off"></p>
+    </div>
+    <p id="heure" class="heure" aria-label="Heure actuelle"></p>
+  </header>
+
+  <!-- Réglages d'affichage : taille du texte et contraste -->
+  <nav class="reglages" aria-label="Réglages d'affichage">
+    <button type="button" id="btn-taille-moins" class="bouton bouton-reglage" aria-label="Réduire la taille du texte">A<span aria-hidden="true">-</span></button>
+    <button type="button" id="btn-taille-plus" class="bouton bouton-reglage" aria-label="Agrandir la taille du texte">A<span aria-hidden="true">+</span></button>
+    <button type="button" id="btn-contraste" class="bouton bouton-reglage" aria-pressed="false">Contraste élevé</button>
+  </nav>
+
+  <main id="contenu">
+    <!-- La grille de tuiles est générée par app.js à partir de la configuration -->
+    <ul id="tuiles" class="tuiles" aria-label="Mes services en ligne"></ul>
+    <p id="message-vide" class="message-vide" hidden>Aucun bouton n'est configuré pour le moment.</p>
+  </main>
+
+  <footer class="pied">
+    <button type="button" id="btn-aide" class="bouton bouton-aide">
+      <span id="aide-icone"></span>
+      J'ai besoin d'aide
+    </button>
+    <p class="bandeau">Ces boutons ouvrent uniquement les vrais sites officiels. En cas de doute sur un message reçu, appelez-moi avant de cliquer.</p>
+  </footer>
+
+  <!-- Fenêtre d'aide -->
+  <dialog id="dialog-aide" class="dialog" aria-labelledby="aide-titre">
+    <h2 id="aide-titre">Je suis là pour vous aider</h2>
+    <p class="aide-texte">Pas d'inquiétude, tout va bien. Appelez-moi, je vous guide tranquillement par téléphone.</p>
+    <p class="aide-nom" id="aide-nom"></p>
+    <a id="aide-telephone" class="aide-telephone" href="#"></a>
+    <p class="aide-texte">Vous pouvez aussi simplement fermer cette fenêtre et revenir à l'accueil.</p>
+    <button type="button" id="btn-fermer-aide" class="bouton bouton-principal">Fermer</button>
+  </dialog>
+
+  <!-- Fenêtre "Aide à distance" : 4 étapes, le senior initie et accepte toujours la connexion -->
+  <dialog id="dialog-distance" class="dialog dialog-distance" aria-labelledby="distance-titre">
+    <h2 id="distance-titre">Aide à distance : 4 étapes</h2>
+    <ol class="etapes">
+      <li>
+        <span class="etape-texte">Appelez-moi d'abord au</span>
+        <a id="distance-telephone" class="aide-telephone" href="#"></a>
+      </li>
+      <li><span class="etape-texte">Double-cliquez sur l'icône <strong>« Aide à distance »</strong> sur votre Bureau.</span></li>
+      <li><span class="etape-texte" id="distance-etape-code"></span></li>
+      <li><span class="etape-texte" id="distance-etape-accepter"></span></li>
+    </ol>
+    <p class="protection">Je ne vous demanderai jamais d'ouvrir l'aide à distance sans que vous m'ayez appelé. Si quelqu'un d'autre vous le demande, refusez et raccrochez.</p>
+    <button type="button" id="btn-fermer-distance" class="bouton bouton-principal">Fermer</button>
+  </dialog>
+
+  <!-- Fenêtre "Un message me paraît bizarre" : 4 blocs, tout se passe en local, aucun lien n'est ouvert -->
+  <dialog id="dialog-bizarre" class="dialog dialog-bizarre" aria-labelledby="bizarre-titre">
+    <h2 id="bizarre-titre">Un message me paraît bizarre</h2>
+
+    <section class="bloc" aria-labelledby="bizarre-q-titre">
+      <h3 id="bizarre-q-titre">1. Posez-vous 3 questions</h3>
+      <ol class="questions">
+        <li>On me demande de l'argent, un code ou un mot de passe ?</li>
+        <li>On me met la pression (urgent, dernier délai, compte bloqué) ?</li>
+        <li>Ce message est-il inattendu ?</li>
+      </ol>
+      <p class="protection">Si la réponse est oui à UNE seule question : ne cliquez pas, ne répondez pas, appelez-moi.</p>
+    </section>
+
+    <section class="bloc" aria-labelledby="bizarre-v-titre">
+      <h3 id="bizarre-v-titre">2. Vérifier une adresse</h3>
+      <form id="form-verif" method="dialog">
+        <label for="champ-adresse">Collez ici l'adresse du site (le lien ne sera jamais ouvert) :</label>
+        <div class="ligne-verif">
+          <input id="champ-adresse" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.exemple.fr">
+          <button type="submit" class="bouton bouton-principal">Vérifier</button>
+        </div>
+      </form>
+      <div id="verif-resultat" class="verif-resultat" role="status" aria-live="polite"></div>
+      <p class="discret">L'analyse se fait uniquement sur cet ordinateur. Rien n'est envoyé ni conservé.</p>
+    </section>
+
+    <section class="bloc" aria-labelledby="bizarre-a-titre">
+      <h3 id="bizarre-a-titre">3. Les arnaques du moment</h3>
+      <ul id="liste-arnaques" class="arnaques"></ul>
+    </section>
+
+    <div class="actions">
+      <a id="bizarre-telephone" class="aide-telephone" href="#"></a>
+      <button type="button" id="btn-fermer-bizarre" class="bouton bouton-principal">Fermer</button>
+    </div>
+  </dialog>
+
+  <!-- Saisie du code PIN (mode technicien) -->
+  <dialog id="dialog-pin" class="dialog dialog-pin" aria-labelledby="pin-titre">
+    <form id="form-pin" method="dialog">
+      <h2 id="pin-titre">Mode technicien</h2>
+      <label for="champ-pin">Code à 4 chiffres</label>
+      <input id="champ-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required>
+      <p id="pin-erreur" class="erreur" role="alert"></p>
+      <div class="actions">
+        <button type="button" id="btn-pin-annuler" class="bouton">Annuler</button>
+        <button type="submit" class="bouton bouton-principal">Valider</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Panneau technicien (généré par app.js) -->
+  <section id="panneau-tech" class="panneau-tech" hidden aria-labelledby="tech-titre"></section>
+
+  <!-- Icônes (SVG inline, générées par outils/gen-icones.py) -->
+  <script src="icones.js"></script>
+  <!-- Configuration embarquée (fallback si config.json ne peut pas être lu, par ex. en file://) -->
+  <script src="config.js"></script>
+  <!-- Vérification locale d'une adresse (aucun lien ouvert, aucun envoi) ; testé par outils/test-verification.js -->
+  <script src="verification.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

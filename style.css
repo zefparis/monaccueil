@@ -1,0 +1,509 @@
+/* =====================================================================
+   MonAccueil - feuille de style
+   Principe : gros, lisible, contrasté, sans surprise.
+   Toutes les tailles sont en rem : les boutons A- / A+ changent la taille
+   de base sur <html> (classes taille-1, taille-2, taille-3) et tout suit.
+   ===================================================================== */
+
+/* ---------- Variables ---------- */
+:root {
+  --fond: #ffffff;
+  --fond-doux: #f3f4f6;
+  --texte: #111827;          /* ratio 17:1 sur blanc */
+  --texte-secondaire: #374151; /* ratio 10:1 sur blanc */
+  --bordure: #9ca3af;
+  --focus: #000000;
+  --focus-halo: #fde047;
+  --aide: #b91c1c;            /* rouge sombre, blanc dessus = 7.4:1 */
+  --aide-texte: #ffffff;
+  --principal: #1d4ed8;
+  --principal-texte: #ffffff;
+  --erreur: #b91c1c;
+  --rayon: 1rem;
+  --transition: 250ms ease;
+}
+
+/* Trois niveaux de taille de texte (base 20px minimum) */
+html.taille-1 { font-size: 20px; }
+html.taille-2 { font-size: 24px; }
+html.taille-3 { font-size: 28px; }
+
+/* Mode contraste élevé : noir / blanc / jaune */
+html.contraste-eleve {
+  --fond: #000000;
+  --fond-doux: #000000;
+  --texte: #ffffff;
+  --texte-secondaire: #ffffff;
+  --bordure: #ffffff;
+  --focus: #ffff00;
+  --focus-halo: #000000;
+  --aide: #ffff00;
+  --aide-texte: #000000;
+  --principal: #ffff00;
+  --principal-texte: #000000;
+  --erreur: #ffff00;
+}
+
+/* Respect de la préférence "réduire les animations" */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { background: var(--fond); }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--texte);
+  background: var(--fond);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Focus clavier très visible, partout */
+:focus-visible {
+  outline: 0.3rem solid var(--focus);
+  outline-offset: 0.2rem;
+  box-shadow: 0 0 0 0.6rem var(--focus-halo);
+}
+
+/* Lien d'évitement : visible seulement au focus */
+.evitement {
+  position: absolute;
+  left: 1rem;
+  top: -10rem;
+  padding: 0.5rem 1rem;
+  background: var(--fond);
+  color: var(--texte);
+  font-weight: 700;
+  border: 0.2rem solid var(--texte);
+  border-radius: var(--rayon);
+}
+.evitement:focus { top: 1rem; z-index: 10; }
+
+/* ---------- En-tête ---------- */
+.entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding: 1.5rem 2rem 0.5rem;
+}
+
+.titre {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  /* Empêche la sélection du texte lors de l'appui long */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.date {
+  margin: 0.25rem 0 0;
+  font-size: 1.3rem;
+  color: var(--texte-secondaire);
+}
+
+.heure {
+  margin: 0;
+  font-size: 3.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ---------- Réglages d'affichage ---------- */
+.reglages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.5rem 2rem 1rem;
+}
+
+/* ---------- Boutons génériques ---------- */
+.bouton {
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--texte);
+  background: var(--fond);
+  border: 0.2rem solid var(--texte);
+  border-radius: var(--rayon);
+  padding: 0.6rem 1.2rem;
+  min-height: 3rem;
+  min-width: 3rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  transition: background-color var(--transition), color var(--transition);
+}
+.bouton:hover { background: var(--fond-doux); }
+.bouton[aria-pressed="true"] { background: var(--texte); color: var(--fond); }
+
+.bouton-reglage { font-size: 1.3rem; gap: 0; }
+
+.bouton-principal {
+  background: var(--principal);
+  color: var(--principal-texte);
+  border-color: var(--principal);
+}
+.bouton-principal:hover { filter: brightness(1.1); background: var(--principal); }
+
+/* ---------- Grille de tuiles ---------- */
+#contenu { flex: 1; padding: 0.5rem 2rem 1.5rem; }
+
+.tuiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+@media (max-width: 1100px) { .tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px)  { .tuiles { grid-template-columns: minmax(0, 1fr); } }
+.tuiles li { display: flex; }   /* la tuile remplit toute la cellule : hauteurs égales par ligne */
+
+.tuile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  min-height: 8rem;              /* 160px au niveau 1 */
+  padding: 1.2rem 1rem;
+  text-decoration: none;
+  color: var(--texte);
+  background: var(--fond);
+  border: 0.25rem solid var(--couleur, var(--bordure));
+  border-bottom-width: 0.6rem;
+  border-radius: var(--rayon);
+  transition: background-color var(--transition), transform var(--transition);
+  overflow-wrap: anywhere;
+}
+.tuile:hover { background: var(--fond-doux); }
+.tuile:active { transform: scale(0.98); }
+
+/* Icône : SVG inline (traits épais), colorée avec la couleur d'accent de la tuile */
+.icone {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 4rem;
+  height: 4rem;
+  color: var(--couleur, currentColor);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tuile-label {
+  font-size: 1.4rem;             /* 28px au niveau 1 */
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* En contraste élevé : tuiles blanches sur noir, icônes jaunes */
+html.contraste-eleve .tuile { border-color: #ffffff; }
+html.contraste-eleve .tuile .icone, html.contraste-eleve .carte-tuile .icone { color: #ffff00; }
+html.contraste-eleve .tuile:hover { background: #1f1f1f; }
+
+.message-vide { font-size: 1.3rem; text-align: center; }
+
+/* ---------- Pied de page ---------- */
+.pied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem 1.5rem;
+  border-top: 0.15rem solid var(--bordure);
+}
+
+.bouton-aide {
+  font-size: 1.6rem;
+  min-height: 4.5rem;
+  padding: 0.8rem 2rem;
+  background: var(--aide);
+  color: var(--aide-texte);
+  border-color: var(--aide);
+  width: min(100%, 30rem);
+}
+.bouton-aide:hover { background: var(--aide); filter: brightness(1.1); }
+.bouton-aide .icone { width: 2.4rem; height: 2.4rem; color: var(--aide-texte); }
+
+.bandeau {
+  margin: 0;
+  max-width: 50rem;
+  text-align: center;
+  font-size: 1rem;
+  color: var(--texte-secondaire);
+}
+
+/* ---------- Fenêtres de dialogue ---------- */
+.dialog {
+  width: min(92vw, 36rem);
+  max-height: 90vh;
+  padding: 2rem;
+  border: 0.3rem solid var(--texte);
+  border-radius: var(--rayon);
+  color: var(--texte);
+  background: var(--fond);
+  text-align: center;
+  overflow: auto;
+}
+.dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.dialog h2 { margin: 0 0 1rem; font-size: 1.8rem; }
+.aide-texte { font-size: 1.2rem; margin: 0.8rem 0; }
+.aide-nom { font-size: 1.6rem; font-weight: 700; margin: 1rem 0 0.5rem; }
+
+.aide-telephone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0.5rem 0 1rem;
+  padding: 1rem 1.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--principal-texte);
+  background: var(--principal);
+  border-radius: var(--rayon);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.aide-telephone .icone { width: 2.4rem; height: 2.4rem; color: var(--principal-texte); }
+
+.dialog .bouton-principal { font-size: 1.3rem; min-width: 10rem; margin-top: 0.5rem; }
+
+/* Fenêtre "Aide à distance" */
+.dialog-distance { width: min(94vw, 44rem); max-height: 96vh; text-align: left; padding: 1rem 1.5rem; }
+.dialog-distance h2 { margin-bottom: 0.3rem; }
+.dialog-distance h2, .dialog-distance > .aide-texte, .dialog-distance .protection { text-align: center; }
+.etapes {
+  list-style: none;
+  counter-reset: etape;
+  margin: 0.5rem 0;
+  padding: 0;
+}
+.etapes li {
+  counter-increment: etape;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.55rem 0;
+  border-top: 0.1rem solid var(--bordure);
+  font-size: 1.15rem;
+}
+.etapes li::before {
+  content: counter(etape);
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--principal);
+  color: var(--principal-texte);
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+.etapes .etape-texte { flex: 1 1 8rem; }
+.etapes .aide-telephone { margin: 0; font-size: 1.5rem; padding: 0.6rem 1rem; }
+.protection {
+  margin: 0.6rem 0;
+  padding: 0.7rem 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--texte);
+  background: var(--fond-doux);
+  border: 0.25rem solid var(--aide);
+  border-radius: var(--rayon);
+}
+html.contraste-eleve .protection { background: #000; }
+.dialog-distance .bouton-principal { display: flex; margin: 0.5rem auto 0; }
+
+/* Fenêtre "Un message me paraît bizarre" */
+.dialog-bizarre { width: min(96vw, 50rem); max-height: 96vh; text-align: left; padding: 1rem 1.5rem; }
+.dialog-bizarre h2 { text-align: center; margin-bottom: 0.5rem; }
+.dialog-bizarre .bloc {
+  margin: 0.8rem 0;
+  padding: 0.8rem 1rem;
+  border: 0.15rem solid var(--bordure);
+  border-radius: var(--rayon);
+}
+.dialog-bizarre h3 { margin: 0 0 0.5rem; font-size: 1.4rem; }
+.questions { margin: 0 0 0.5rem; padding-left: 1.8rem; font-size: 1.2rem; font-weight: 700; }
+.questions li { margin: 0.4rem 0; }
+.dialog-bizarre .protection { margin: 0.5rem 0 0; }
+.dialog-bizarre label { display: block; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.ligne-verif { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: stretch; }
+.ligne-verif input {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font: inherit;
+  font-size: 1.1rem;
+  padding: 0.6rem 0.8rem;
+  border: 0.2rem solid var(--texte);
+  border-radius: var(--rayon);
+  color: var(--texte);
+  background: var(--fond);
+}
+.dialog-bizarre .ligne-verif .bouton-principal { margin-top: 0; }
+.verif-resultat:empty { display: none; }
+.verif-resultat {
+  margin-top: 0.8rem;
+  padding: 0.8rem 1rem;
+  border: 0.3rem solid var(--bordure);
+  border-radius: var(--rayon);
+  font-size: 1.2rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.verif-resultat p { margin: 0.3rem 0; }
+.verif-resultat .verdict { font-size: 1.5rem; }
+.verif-resultat ul { margin: 0.4rem 0 0; padding-left: 1.5rem; font-weight: 400; }
+.verif-resultat.vert { border-color: #15803d; background: #f0fdf4; }
+.verif-resultat.vert .verdict { color: #15803d; }
+.verif-resultat.rouge { border-color: var(--aide); background: #fef2f2; }
+.verif-resultat.rouge .verdict { color: var(--aide); }
+html.contraste-eleve .verif-resultat { background: #000; }
+html.contraste-eleve .verif-resultat.vert { border-color: #fff; }
+html.contraste-eleve .verif-resultat.vert .verdict { color: #fff; }
+html.contraste-eleve .verif-resultat.rouge { border-color: #ffff00; }
+html.contraste-eleve .verif-resultat.rouge .verdict { color: #ffff00; }
+.discret { margin: 0.6rem 0 0; font-size: 0.95rem; color: var(--texte-secondaire); }
+.arnaques { list-style: none; margin: 0; padding: 0; }
+.arnaques li { padding: 0.5rem 0; border-top: 0.1rem solid var(--bordure); }
+.arnaques li:first-child { border-top: 0; padding-top: 0; }
+.arnaques .arnaque-titre { display: block; font-size: 1.2rem; font-weight: 700; }
+.arnaques .arnaque-texte { display: block; font-size: 1.05rem; margin-top: 0.2rem; }
+.dialog-bizarre .actions .aide-telephone { margin: 0; font-size: 1.4rem; padding: 0.6rem 1.2rem; }
+.dialog-bizarre .actions .bouton-principal { margin-top: 0; }
+
+/* Saisie du PIN */
+.dialog-pin label { display: block; font-size: 1.2rem; margin-bottom: 0.5rem; }
+.dialog-pin input {
+  font: inherit;
+  font-size: 2rem;
+  letter-spacing: 0.5rem;
+  text-align: center;
+  width: 10rem;
+  padding: 0.4rem;
+  border: 0.2rem solid var(--texte);
+  border-radius: var(--rayon);
+  color: var(--texte);
+  background: var(--fond);
+}
+.erreur { color: var(--erreur); font-weight: 700; min-height: 1.5em; margin: 0.5rem 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; }
+
+/* ---------- Panneau technicien ---------- */
+.panneau-tech {
+  padding: 1.5rem 2rem 3rem;
+  font-size: 0.9rem;
+  background: var(--fond-doux);
+  border-top: 0.3rem solid var(--principal);
+}
+.panneau-tech h2 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+.panneau-tech h3 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+.panneau-tech h4 { font-size: 1.05rem; margin: 1.2rem 0 0.4rem; }
+.panneau-tech .bouton { font-size: 0.9rem; min-height: 2.4rem; }
+.panneau-tech .barre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  margin: 0.8rem 0;
+}
+.panneau-tech label { display: flex; flex-direction: column; gap: 0.2rem; font-weight: 700; }
+.panneau-tech input, .panneau-tech select, .panneau-tech textarea {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 0.15rem solid var(--texte);
+  border-radius: 0.5rem;
+  color: var(--texte);
+  background: var(--fond);
+  min-width: 0;
+}
+.panneau-tech input[type="color"] { padding: 0; width: 4rem; height: 2.4rem; }
+.panneau-tech textarea { width: 100%; min-height: 6rem; }
+.panneau-tech .champs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.8rem;
+}
+.panneau-tech label.ligne { flex-direction: row; align-items: center; gap: 0.6rem; }
+.panneau-tech input[type="checkbox"] { width: 1.5rem; height: 1.5rem; }
+
+/* Tuiles "Aide à distance" et "Message bizarre" : des boutons qui ont exactement l'aspect des autres tuiles */
+button.tuile { font: inherit; cursor: pointer; width: 100%; }
+
+.carte-tuile {
+  background: var(--fond);
+  border: 0.15rem solid var(--bordure);
+  border-left: 0.5rem solid var(--couleur, var(--bordure));
+  border-radius: 0.5rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.8rem;
+}
+.carte-tuile .apercu { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; font-weight: 700; }
+.carte-tuile .apercu .icone { width: 2rem; height: 2rem; }
+.avertissement { color: var(--erreur); font-weight: 700; margin: 0.3rem 0 0; }
+.liste-erreurs { color: var(--erreur); font-weight: 700; }
+.confirmation { color: #15803d; font-weight: 700; }
+html.contraste-eleve .confirmation { color: #ffff00; }
+.visuellement-cache {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* Onglets du mode technicien */
+.onglets { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 0; border-bottom: 0.15rem solid var(--texte); }
+.onglets .onglet { border-radius: 0.5rem 0.5rem 0 0; border-bottom: 0; }
+.onglets .onglet[aria-selected="true"] { background: var(--texte); color: var(--fond); }
+
+/* Journal des interventions */
+.resume {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+}
+.resume div { background: var(--fond); border: 0.15rem solid var(--bordure); border-radius: 0.5rem; padding: 0.5rem 0.8rem; }
+.resume dt { font-weight: 700; }
+.resume dd { margin: 0.2rem 0 0; }
+.journal-defilement { overflow-x: auto; }
+.journal-table { border-collapse: collapse; width: 100%; background: var(--fond); }
+.journal-table th, .journal-table td { border: 0.1rem solid var(--bordure); padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+.journal-table th { background: var(--fond-doux); }
+html.contraste-eleve .journal-table th { background: #000; }
+.journal-table .journal-note { overflow-wrap: anywhere; min-width: 12rem; }
+.journal-table .bouton { white-space: nowrap; }
+
+/* Quand le panneau technicien est ouvert, on cache l'écran principal */
+body.mode-tech .entete, body.mode-tech .reglages, body.mode-tech #contenu, body.mode-tech .pied { display: none; }
+
+/* ---------- Petites fenêtres ---------- */
+@media (max-width: 700px) {
+  .entete, .reglages, #contenu, .pied, .panneau-tech { padding-left: 1rem; padding-right: 1rem; }
+  .titre { font-size: 2rem; }
+  .heure { font-size: 2.6rem; }
+}

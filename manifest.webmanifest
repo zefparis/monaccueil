@@ -1,0 +1,14 @@
+{
+  "name": "Mon Accueil",
+  "short_name": "Mon Accueil",
+  "description": "Page d'accueil simple vers les services en ligne officiels.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    { "src": "icons/app.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

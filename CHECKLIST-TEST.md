@@ -1,0 +1,149 @@
+# Checklist de test chez le client
+
+À faire **sur le PC du client, avec le client à côté**, après `install.bat`.
+Cochez chaque ligne. Durée : environ 15 minutes.
+
+## A. Lancement
+
+- [ ] Le PC démarre, le navigateur s'ouvre (ou le raccourci « Mon Accueil ») et la
+      page MonAccueil apparaît **sans rien faire d'autre**.
+- [ ] Le titre affiche « Bonjour [prénom] » avec le bon prénom.
+- [ ] Même contrôle **dans Edge** : la page s'ouvre et affiche la même chose que dans
+      le navigateur habituel du client.
+- [ ] La date du jour est correcte, en français ; l'heure est à l'heure.
+- [ ] Aucun message d'erreur, aucune barre jaune « bloqué » dans le navigateur.
+- [ ] (Si plein écran) Pas de barre d'adresse, pas d'onglets visibles.
+
+## B. Lisibilité
+
+- [ ] Assis à sa place habituelle, le client lit **tous** les libellés sans effort.
+- [ ] Sinon : cliquer « A+ » une ou deux fois. Le réglage reste après fermeture /
+      réouverture du navigateur.
+- [ ] Tester « Contraste élevé » ; garder ce qui convient au client.
+- [ ] Zoom navigateur à 200 % (Ctrl + molette) : rien ne déborde, pas de défilement
+      horizontal. Remettre à 100 % (Ctrl + 0) si non souhaité.
+- [ ] Chaque tuile a une icône claire et une couleur distincte.
+
+## C. Clics
+
+- [ ] Cliquer **chaque** tuile : le bon site s'ouvre, dans un **nouvel onglet** (ou
+      une nouvelle fenêtre en mode application).
+- [ ] L'adresse ouverte commence bien par `https://` et le domaine est le bon.
+- [ ] Les tuiles « Ma banque », « Mes mails », « Photos » ouvrent les sites
+      personnels du client (ou sont absentes si non configurées).
+- [ ] Aucun site ne demande d'installer quelque chose au premier clic.
+
+## D. Retour à l'accueil
+
+- [ ] Montrer au client comment **revenir au premier onglet** (ou à la fenêtre
+      MonAccueil restée derrière) : la page est toujours là.
+- [ ] Fermer complètement le navigateur, le rouvrir : MonAccueil réapparaît.
+- [ ] Bouton Accueil du navigateur (si activé) : revient sur MonAccueil.
+- [ ] Redémarrer le PC une fois : MonAccueil est de retour.
+
+## E. Bouton « J'ai besoin d'aide »
+
+- [ ] Le bouton rouge est visible sans défiler (sinon réduire « A- »).
+- [ ] Il affiche votre nom et votre numéro, en gros.
+- [ ] Le numéro est correct. Sur un appareil capable d'appeler, le lien `tel:`
+      lance l'appel. Si le lien `tel:` ne fait rien sur ce PC : **plan B**, le
+      numéro est aussi écrit en très gros sur la fiche `docs/fiche-senior.html`
+      imprimée — vérifier qu'il est bien lisible de loin.
+- [ ] « Fermer » ramène à l'accueil, rien d'autre n'a changé.
+- [ ] Le bandeau « Ces boutons ouvrent uniquement les vrais sites officiels… » est
+      lisible. Expliquer au client : **« en cas de doute, appelez-moi avant de
+      cliquer »**.
+
+## F. Aide à distance
+
+- [ ] La tuile violette « Aide à distance » est présente (ou absente si `actif: false`).
+- [ ] Un clic ouvre la fenêtre en 4 étapes ; le numéro de téléphone est le vôtre ;
+      les étapes 3 et 4 correspondent à l'outil choisi (code à taper / code à lire).
+- [ ] Le texte « Je ne vous demanderai jamais… » est lu **à voix haute** avec le
+      client ; il sait qu'il doit raccrocher si quelqu'un d'autre le lui demande.
+- [ ] « Fermer » (souris et clavier : Tab puis Entrée, ou Échap) ramène à l'accueil.
+- [ ] Le raccourci Bureau « Aide à distance » existe, avec sa grande icône violette.
+- [ ] Double-clic sur le raccourci : Assistance rapide (ou RustDesk) s'ouvre. Si
+      l'outil manque, un message en français s'affiche (pas une console noire).
+- [ ] **Parcours complet avec un faux client** (collègue ou proche au téléphone) :
+      appel → tuile → raccourci → code → Autoriser/Accepter → vous voyez l'écran →
+      vous fermez la session devant lui → il confirme qu'il ne voit plus rien.
+- [ ] RustDesk uniquement : mot de passe **temporaire** actif, « Accepter via clic »
+      coché, pas de démarrage automatique ni d'accès sans surveillance.
+- [ ] Aucun mot de passe, code ou ID n'est noté sur un papier collé à l'écran.
+
+## F bis. Tuile « Un message me paraît bizarre »
+
+- [ ] La tuile orange foncé avec le bouclier est présente ; un clic ouvre la grande
+      fenêtre, le curseur est dans le champ d'adresse.
+- [ ] Lire **à voix haute** les 3 questions et la conclusion « Si la réponse est oui à
+      UNE seule question… » avec le client.
+- [ ] Coller `https://www.ameli.fr` → résultat **vert** « SÛR », avec la phrase
+      « le message qui vous l'a envoyé peut quand même être une arnaque ».
+- [ ] Coller `https://ameli.fr.secure-login.net` → résultat **rouge** « DANGER », raison
+      « imite le nom d'un site officiel ».
+- [ ] Coller `http://www.ameli.fr` (sans s) → rouge, raison « http:// sans le s ».
+- [ ] Coller un texte quelconque (« bonjour ») → rouge, pas de plantage.
+- [ ] Pendant ces tests, **aucun onglet ne s'ouvre**, rien ne se charge.
+- [ ] Montrer au client comment copier l'adresse d'un lien (clic droit → « Copier
+      l'adresse du lien ») sans cliquer dessus.
+- [ ] Les 5 arnaques du moment s'affichent avec un titre et un texte court ; les mettre
+      à jour si besoin (mode technicien).
+- [ ] « Appeler [votre nom] » affiche bien votre nom ; le lien `tel:` contient votre
+      numéro.
+- [ ] « Fermer » et **Échap** ferment la fenêtre ; à la réouverture, le champ et le
+      résultat sont **vides**.
+- [ ] En contraste élevé et en taille A+ A+ : la fenêtre reste lisible, défile si
+      besoin, rien ne déborde.
+- [ ] Mode technicien : les compteurs « vérifications / rouges » ont augmenté.
+
+## G. Clavier (si le client utilise peu la souris)
+
+- [ ] Tab passe de bouton en bouton, le contour de focus est bien visible.
+- [ ] Entrée ouvre la tuile sélectionnée.
+- [ ] Dans « Un message me paraît bizarre » : Tab atteint le champ, « Vérifier »,
+      « Appeler » et « Fermer » ; Entrée dans le champ lance la vérification ; Échap
+      ferme et le focus revient sur la tuile.
+
+## H. Hors ligne
+
+- [ ] Couper le Wi-Fi / débrancher le câble. Fermer et rouvrir le navigateur :
+      la page MonAccueil s'affiche quand même (en `file://` c'est automatique ;
+      en https, la PWA doit être installée et ouverte une première fois).
+- [ ] Cliquer une tuile hors ligne : le navigateur affiche sa page « pas de
+      connexion » (normal). Reconnecter.
+
+## I. Mode technicien
+
+- [ ] Appui long de 3 s sur le titre → demande de PIN. Le client ne tombe pas
+      dessus par hasard (un clic simple ne fait rien).
+- [ ] Le PIN par défaut `1234` a été **changé**.
+- [ ] Un mauvais PIN est refusé.
+- [ ] « Quitter le mode technicien » ramène à l'écran normal.
+- [ ] Réglages « Aide à distance » (actif, outil, ID RustDesk) corrects et exportés.
+- [ ] Une copie du `config.json` du client est conservée dans vos archives.
+
+## I bis. Onglet « Journal des interventions »
+
+- [ ] L'onglet « Journal des interventions » s'ouvre ; rien du journal n'est visible
+      hors du mode technicien (quitter, vérifier l'écran du client).
+- [ ] Ajouter l'intervention du jour (date pré-remplie, durée, lieu, motif, note
+      **sans donnée personnelle**) : elle apparaît en haut de la liste, le résumé
+      (nombre, temps total, moyenne, par motif, par lieu) est mis à jour.
+- [ ] Une durée vide ou à 0 est refusée avec un message clair.
+- [ ] « Supprimer » demande confirmation ; « Annuler » ne supprime rien.
+- [ ] « Exporter le journal (CSV) » : le fichier s'ouvre dans Excel avec les colonnes
+      séparées et les accents corrects.
+- [ ] Réimporter ce même CSV : « 0 ajoutée, N doublon(s) ignoré(s) », liste inchangée.
+- [ ] Importer un fichier quelconque (photo, texte) : refus propre, journal inchangé.
+- [ ] Fermer et rouvrir le navigateur : le journal est toujours là.
+- [ ] Le CSV exporté est archivé dans la fiche client.
+
+## J. Finitions
+
+- [ ] Bureau nettoyé : seulement « Mon Accueil », « Aide à distance » (et
+      éventuellement la corbeille).
+- [ ] Navigateur : extensions inutiles supprimées, barre de favoris masquée.
+- [ ] Le client a fait **seul** : ouvrir le PC → cliquer une tuile → revenir →
+      cliquer « J'ai besoin d'aide » → fermer. Sans aide, en moins de 5 secondes
+      pour comprendre quoi faire.
