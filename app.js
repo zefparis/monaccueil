@@ -326,6 +326,8 @@
       modeTechnicien: typeof c.modeTechnicien === 'boolean' ? c.modeTechnicien : true,
       ouvertureSites: OUVERTURES.indexOf(c.ouvertureSites) !== -1 ? c.ouvertureSites : 'fenetre',
       ouvertureMobile: OUVERTURES_MOBILE.indexOf(c.ouvertureMobile) !== -1 ? c.ouvertureMobile : 'onglet',
+      // « Si je ne réponds pas » : gros liens tel: dans le dialog d'aide (max 8, schéma strict)
+      numerosUrgence: listeNumeros(c.numerosUrgence),
       // Lien d'appel vidéo facultatif : https + domaine de la liste officielle (comme toute tuile)
       lienVisio: (function () {
         var v = typeof c.lienVisio === 'string' ? c.lienVisio.trim() : '';
@@ -490,6 +492,26 @@
     afficherBizarre();
     // Barre fixe du téléphone : « Appeler [prénom du technicien] » en lien tel: natif
     remplirLienAppel($('btn-appeler'));
+    afficherUrgences();
+  }
+
+  /** « Si je ne réponds pas » : gros liens tel: dans la fenêtre d'aide (config.numerosUrgence). */
+  function afficherUrgences() {
+    var ul = $('liste-urgences');
+    if (!ul) { return; }
+    vider(ul);
+    config.numerosUrgence.forEach(function (u) {
+      ul.appendChild(el('li', null, [
+        el('a', { 'class': 'num-urgence', href: numeroTel(u.numero) }, [
+          creerIcone('telephone.svg'),
+          el('span', { 'class': 'num-urgence-bloc' }, [
+            el('span', { 'class': 'num-urgence-nom', text: u.nom + ' : ' + u.numero }),
+            u.detail ? el('span', { 'class': 'num-urgence-detail', text: u.detail }) : null
+          ].filter(Boolean))
+        ])
+      ]));
+    });
+    $('urgences-titre').parentNode.hidden = !config.numerosUrgence.length;
   }
 
   /** Textes des étapes 2 à 4 selon l'outil choisi et le mode d'hébergement
@@ -921,6 +943,16 @@
       var tuile = document.querySelector('.tuile-distance');
       if (tuile) { tuile.focus(); }
     });
+    // « Comment ça marche ? » : 3 gestes, texte adapté au téléphone
+    var dm = $('dialog-mode');
+    $('lien-mode').addEventListener('click', function () {
+      var mobile = estMobile();
+      $('mode-desktop').hidden = mobile;
+      $('mode-mobile').hidden = !mobile;
+      ouvrirDialog(dm);
+      $('btn-fermer-mode').focus();
+    });
+    $('btn-fermer-mode').addEventListener('click', function () { fermerDialog(dm); $('lien-mode').focus(); });
   }
 
   /* ------------------------------------------------------------------
@@ -1335,6 +1367,42 @@
     return texte.split(/[\n,;]+/).map(function (d) { return d.trim().toLowerCase(); }).filter(Boolean);
   }
 
+  /* ------------------------------------------------------------------
+     Numéros utiles (« Si je ne réponds pas ») : nom | numéro | détail.
+     Schéma strict : nom 1-40 car., numéro en chiffres/espaces/+/- (≥ 2
+     chiffres), détail ≤ 120 car. Entrées invalides ignorées, jamais 9e.
+     ------------------------------------------------------------------ */
+
+  function numeroValide(n) { return /^[0-9+().\-\s]{2,20}$/.test(String(n || '').trim()); }
+  function numeroTel(n) { return 'tel:' + String(n).replace(/[^0-9+]/g, ''); }
+
+  function normaliserNumero(u) {
+    var nom = String(u && u.nom || '').trim();
+    var numero = String(u && u.numero || '').trim();
+    var detail = String(u && u.detail || '').trim();
+    if (!nom || nom.length > 40 || !numeroValide(numero) || numero.replace(/\D/g, '').length < 2) { return null; }
+    return { nom: nom, numero: numero, detail: detail.slice(0, 120) };
+  }
+  function listeNumeros(liste) {
+    var out = [];
+    (Array.isArray(liste) ? liste : []).forEach(function (u) {
+      var n = normaliserNumero(u);
+      if (n && out.length < 8) { out.push(n); }
+    });
+    return out;
+  }
+
+  /** Format texte « Nom | numéro | détail » par ligne (panneau technicien). */
+  function lireNumerosTexte(texte) {
+    return listeNumeros(texte.split('\n').map(function (l) {
+      var m = l.split('|').map(function (s) { return s.trim(); });
+      return { nom: m[0], numero: m[1], detail: m[2] };
+    }));
+  }
+  function numerosTexte(liste) {
+    return (liste || []).map(function (u) { return u.nom + ' | ' + u.numero + (u.detail ? ' | ' + u.detail : ''); }).join('\n');
+  }
+
   /** Lit les champs du formulaire dans le brouillon (avant toute action). */
   function lireFormulaire() {
     var p = $('panneau-tech');
@@ -1351,6 +1419,7 @@
     brouillon.ajoutParPersonne = p.querySelector('[name="ajout-personne"]').value;
     brouillon.domainesOfficiels = lireListeTexte(p.querySelector('[name="domaines"]').value);
     brouillon.raccourcisseurs = lireListeTexte(p.querySelector('[name="raccourcisseurs"]').value);
+    brouillon.numerosUrgence = lireNumerosTexte(p.querySelector('[name="numeros-urgence"]').value);
     brouillon.arnaques = Array.prototype.map.call(p.querySelectorAll('.carte-arnaque'), function (carte) {
       return { titre: carte.querySelector('[name="arnaque-titre"]').value.trim(), texte: carte.querySelector('[name="arnaque-texte"]').value.trim() };
     });
@@ -1392,6 +1461,11 @@
         if (!domaineValide(d)) { erreurs.push(x[0] + ' : « ' + d + ' » n\'est pas un nom de domaine valide (sans http://, sans chemin).'); }
       });
     });
+    // Numéros utiles : une ligne illisible bloque l'enregistrement plutôt que de disparaître en silence
+    var lignesBrutes = $('panneau-tech').querySelector('[name="numeros-urgence"]').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    if (lignesBrutes.length !== brouillon.numerosUrgence.length) {
+      erreurs.push('Numéros utiles : au moins une ligne est illisible. Format attendu : « Nom | numéro | explication » (explication facultative), nom ≤ 40 caractères, numéro en chiffres.');
+    }
     brouillon.arnaques.forEach(function (a, i) {
       if (!a.titre) { erreurs.push('Arnaque n°' + (i + 1) + ' : le titre est vide (supprimez-la ou donnez-lui un titre).'); }
       if (a.texte.length > LONGUEUR_MAX_ARNAQUE) { erreurs.push('Arnaque n°' + (i + 1) + ' : le texte dépasse ' + LONGUEUR_MAX_ARNAQUE + ' caractères.'); }
@@ -1896,6 +1970,12 @@
     p.appendChild(el('p', { text: 'Un domaine par ligne. Une adresse de ce type est toujours signalée en rouge : impossible de savoir où elle mène.' }));
     p.appendChild(el('label', { 'for': 'tech-raccourcisseurs' }, ['Liste des raccourcisseurs',
       el('textarea', { id: 'tech-raccourcisseurs', name: 'raccourcisseurs', spellcheck: 'false' }, [brouillon.raccourcisseurs.join('\n')])]));
+
+    // Numéros utiles affichés dans la fenêtre d'aide (« Si je ne réponds pas »)
+    p.appendChild(el('h4', { text: 'Numéros utiles (« Si je ne réponds pas »)' }));
+    p.appendChild(el('p', { text: 'Un numéro par ligne : « Nom | numéro | explication courte ». Exemple : Info Escroqueries | 0 805 805 817 | « Mon message est-il une arnaque ? »' }));
+    p.appendChild(el('label', { 'for': 'tech-urgences' }, ['Liste des numéros',
+      el('textarea', { id: 'tech-urgences', name: 'numeros-urgence', spellcheck: 'false' }, [numerosTexte(brouillon.numerosUrgence)])]));
 
     var quitterBas = el('button', { type: 'button', 'class': 'bouton bouton-principal', text: 'Quitter le mode technicien' });
     quitterBas.addEventListener('click', quitterModeTech);

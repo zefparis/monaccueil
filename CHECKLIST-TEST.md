@@ -149,6 +149,18 @@ Cochez chaque ligne. Durée : environ 15 minutes.
       besoin, rien ne déborde.
 - [ ] Mode technicien : les compteurs « vérifications / rouges » ont augmenté.
 
+## F ter. Numéros utiles et « Comment ça marche ? »
+
+- [ ] « J'ai besoin d'aide » affiche, sous mon numéro, la section « Si je ne
+      réponds pas » avec les gros liens `tel:` (Info Escroqueries 0 805 805 817,
+      112, 15, 17, 18 par défaut). Un tap/clic compose le numéro.
+- [ ] Modifier la liste dans le mode technicien (« Nom | numéro | explication »
+      par ligne) ; une ligne illisible bloque l'enregistrement avec un message
+      clair ; liste vide → la section disparaît.
+- [ ] Le lien « Comment ça marche ? » sous le prénom ré-affiche les 3 gestes ;
+      le texte de retour correspond à l'écran (croix sur PC, flèche retour sur
+      téléphone).
+
 ## G. Clavier (si le client utilise peu la souris)
 
 - [ ] Tab passe de bouton en bouton, le contour de focus est bien visible.

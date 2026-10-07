@@ -140,10 +140,10 @@ body {
   color: var(--texte-secondaire);
 }
 
-/* Lien « Choisir / Changer mon prénom » sous le titre : discret mais lisible et souligné */
+/* Liens discrets sous le titre (« prénom », « Comment ça marche ? ») : côte à côte */
 .lien-prenom {
-  display: block;
-  margin: 0.05rem 0 0.15rem;
+  display: inline-block;
+  margin: 0.05rem 1.2rem 0.15rem 0;
   padding: 0.15rem 0.3rem;
   font: inherit;
   font-size: 0.95rem;
@@ -463,7 +463,7 @@ html.contraste-eleve .protection { background: #000; }
 /* Fenêtre "Un message me paraît bizarre" */
 .dialog-bizarre { width: min(96vw, 50rem); max-height: 96vh; text-align: left; padding: 1rem 1.5rem; }
 .dialog-bizarre h2 { text-align: center; margin-bottom: 0.5rem; }
-.dialog-bizarre .bloc {
+.dialog-bizarre .bloc, .dialog-aide .bloc {
   margin: 0.8rem 0;
   padding: 0.8rem 1rem;
   border: 0.15rem solid var(--bordure);
@@ -515,6 +515,28 @@ html.contraste-eleve .verif-resultat.rouge .verdict { color: #ffff00; }
 .arnaques li:first-child { border-top: 0; padding-top: 0; }
 .arnaques .arnaque-titre { display: block; font-size: 1.2rem; font-weight: 700; }
 .arnaques .arnaque-texte { display: block; font-size: 1.05rem; margin-top: 0.2rem; }
+
+/* « Si je ne réponds pas » : gros liens tel: dans la fenêtre d'aide */
+.urgences { list-style: none; margin: 0; padding: 0; }
+.num-urgence {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem;
+  margin: 0.5rem 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--principal);
+  background: var(--carte);
+  border: 0.15rem solid var(--principal);
+  border-radius: var(--rayon);
+  text-decoration: none;
+}
+.num-urgence .icone { width: 2rem; height: 2rem; flex-shrink: 0; color: var(--principal); }
+.num-urgence-bloc { display: flex; flex-direction: column; }
+.num-urgence-detail { font-size: 1rem; font-weight: 400; color: var(--texte-secondaire); }
+html.contraste-eleve .num-urgence, html.contraste-eleve .num-urgence .icone { color: #ffff00; border-color: #ffff00; }
+html.contraste-eleve .num-urgence-detail { color: #ffffff; }
 .dialog-bizarre .actions .aide-telephone { margin: 0; font-size: 1.4rem; padding: 0.6rem 1.2rem; }
 .dialog-bizarre .actions .bouton-principal { margin-top: 0; }
 

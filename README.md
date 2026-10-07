@@ -140,6 +140,15 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   vidéo, limitée aux domaines de `domainesOfficiels` (même validation que les
   tuiles). Si renseigné, un bouton « Rejoindre l'appel vidéo » apparaît dans
   « Besoin d'aide ? » sur téléphone uniquement.
+- `numerosUrgence` : liste des numéros affichés dans la fenêtre d'aide sous
+  « Si je ne réponds pas » — chacun devient un gros lien `tel:` cliquable.
+  Format `{ "nom", "numero", "detail" }` : nom ≤ 40 caractères, numéro en
+  chiffres/espaces (normalisé en `tel:` automatiquement), détail court ≤ 120
+  caractères, 8 entrées maximum, entrées invalides ignorées. Par défaut :
+  **Info Escroqueries `0 805 805 817`** (le service public « est-ce une
+  arnaque ? »), 112, SAMU 15, Police 17, Pompiers 18. Éditable dans le mode
+  technicien au format `Nom | numéro | explication` par ligne. Liste vide →
+  la section disparaît de la fenêtre d'aide.
 - `palette` *(facultatif)* : couleurs par défaut parmi `chaleureux` (défaut),
   `bleu`, `vert`, `violet`, `rose`, `gris`. La personne peut en choisir une
   autre via le lien « Changer les couleurs » (stockée dans `localStorage`,
@@ -295,6 +304,12 @@ Exporter → remplacer `config.json` et `config.js` dans `C:\MonAccueil`.
 ## 5. Aide à distance
 
 ### Principe (non négociable)
+
+Le lien discret **« Comment ça marche ? »**, sous le prénom, ré-affiche à tout
+moment les 3 gestes de base (toucher une tuile → revenir à l'accueil → bouton
+rouge), avec le texte adapté à l'écran (croix sur PC, flèche retour sur
+téléphone) et le rappel anti-arnaque. C'est la fiche senior, toujours à portée
+de main.
 
 Le senior **initie et accepte** toujours la connexion. Rien n'est embarqué dans
 MonAccueil : la tuile « Aide à distance » ouvre seulement une fenêtre d'explications

@@ -25,6 +25,8 @@
       <h1 id="titre" class="titre">Bonjour</h1>
       <!-- Lien discret pour changer son prénom (rien à voir avec l'appui long) -->
       <button type="button" id="lien-prenom" class="lien-prenom">Choisir mon prénom</button>
+      <!-- Lien discret qui ré-affiche les 3 gestes de base, à tout moment -->
+      <button type="button" id="lien-mode" class="lien-prenom">Comment ça marche ?</button>
       <p id="date" class="date" aria-live="off"></p>
     </div>
     <div class="entete-droite">
@@ -89,8 +91,30 @@
     <p class="aide-texte">Pas d'inquiétude, tout va bien. Appelez-moi, je vous guide tranquillement par téléphone.</p>
     <p class="aide-nom" id="aide-nom"></p>
     <a id="aide-telephone" class="aide-telephone" href="#"></a>
+    <section class="bloc" aria-labelledby="urgences-titre">
+      <h3 id="urgences-titre">Si je ne réponds pas :</h3>
+      <ul id="liste-urgences" class="urgences"></ul>
+    </section>
     <p class="aide-texte">Vous pouvez aussi simplement fermer cette fenêtre et revenir à l'accueil.</p>
     <button type="button" id="btn-fermer-aide" class="bouton bouton-principal">Fermer</button>
+  </dialog>
+
+  <!-- « Comment ça marche ? » : les 3 gestes de base, rejouables à tout moment.
+       L'étape « revenir » diffère selon l'écran (croix / flèche retour). -->
+  <dialog id="dialog-mode" class="dialog dialog-distance" aria-labelledby="mode-titre">
+    <h2 id="mode-titre">Comment ça marche ?</h2>
+    <ol class="etapes" id="mode-desktop">
+      <li><span class="etape-texte">Touchez un gros bouton : le site officiel s'ouvre dans une fenêtre à droite ou un nouvel onglet.</span></li>
+      <li><span class="etape-texte">Pour revenir ici : fermez cette fenêtre avec la croix en haut à droite, ou fermez l'onglet du site.</span></li>
+      <li><span class="etape-texte">Le bouton rouge tout en bas, « J'ai besoin d'aide », affiche mon numéro de téléphone.</span></li>
+    </ol>
+    <ol class="etapes" id="mode-mobile" hidden>
+      <li><span class="etape-texte">Touchez un gros bouton : le site officiel s'ouvre dans un autre onglet.</span></li>
+      <li><span class="etape-texte">Pour revenir ici : touchez la flèche retour de votre téléphone, ou fermez l'onglet du site.</span></li>
+      <li><span class="etape-texte">Le bouton rouge tout en bas, « Appeler », vous met directement en ligne avec moi.</span></li>
+    </ol>
+    <p class="protection">Un message vous paraît bizarre ? Ne cliquez pas : le bouton « Un message bizarre ? » vérifie l'adresse sans l'ouvrir, ou appelez-moi.</p>
+    <button type="button" id="btn-fermer-mode" class="bouton bouton-principal">Fermer</button>
   </dialog>
 
   <!-- Fenêtre "Aide à distance" : 4 étapes, le senior initie et accepte toujours la connexion.

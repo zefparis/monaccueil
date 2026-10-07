@@ -9,6 +9,13 @@
   "ouvertureSites": "fenetre",
   "ouvertureMobile": "onglet",
   "lienVisio": "",
+  "numerosUrgence": [
+    { "nom": "Info Escroqueries", "numero": "0 805 805 817", "detail": "« Mon message est-il une arnaque ? » — service public gratuit" },
+    { "nom": "Urgences", "numero": "112", "detail": "numéro d'urgence européen, depuis n'importe quel téléphone" },
+    { "nom": "SAMU", "numero": "15", "detail": "urgence médicale" },
+    { "nom": "Police", "numero": "17", "detail": "police secours" },
+    { "nom": "Pompiers", "numero": "18", "detail": "incendie, accident, personne en danger" }
+  ],
   "palette": "chaleureux",
   "ajoutParPersonne": "catalogue",
   "aideDistance": {
