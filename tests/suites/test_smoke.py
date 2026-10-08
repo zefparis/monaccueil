@@ -49,7 +49,7 @@ def run(S, b):
     S.check('mobile : pas de scroll horizontal',
             pg.evaluate('() => document.documentElement.scrollWidth <= innerWidth'))
     S.check('mobile : barre fixe visible',
-            pg.locator('#btn-appeler').is_visible() and pg.locator('#btn-bizarre-bar').is_visible())
+            pg.locator('#btn-appeler').is_visible())
     S.check('mobile : lien appel tel:', (pg.get_attribute('#btn-appeler', 'href') or '').startswith('tel:'))
     S.check('mobile : aucune erreur console', len(errs) == 0)
     ctx.close()

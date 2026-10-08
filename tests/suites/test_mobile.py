@@ -41,21 +41,21 @@ def run(S, b):
     ctx, pg, errs = nouvelle_page(b, mobile=True, width=375, height=760)
     charger(pg); fermer_prenom(pg)
     S.check('barre : « Appeler » visible', pg.locator('#btn-appeler').is_visible())
-    S.check('barre : « Un message bizarre ? » visible', pg.locator('#btn-bizarre-bar').is_visible())
+    S.check('barre : un seul bouton (le vérificateur est dans les tuiles)',
+            pg.locator('.pied-mobile .bouton').count() == 1)
     S.check('barre : Appeler = lien tel:', (pg.get_attribute('#btn-appeler', 'href') or '').startswith('tel:'))
     S.check('barre : Appeler nommé avec le technicien', 'Benji' in (pg.text_content('#btn-appeler') or ''))
     bb = pg.locator('#btn-appeler').bounding_box()
     S.check('barre : cible ≥ 56 px de haut', bb['height'] >= 56)
-    bb2 = pg.locator('#btn-bizarre-bar').bounding_box()
-    S.check('barre : bizarre ≥ 56 px', bb2['height'] >= 56)
+    S.check('barre : Appeler occupe toute la largeur',
+            bb['width'] >= 375 - 30 and bb['x'] <= 20)
     S.check('barre : au bas de l\'écran', bb['y'] + bb['height'] >= 700)
-    pg.screenshot(path=os.path.join(os.path.dirname(__file__), '..', 'captures', 'mobile-375.png'))
     # Visible pendant le défilement (sticky)
     pg.evaluate('() => window.scrollTo(0, 0)')
     pg.wait_for_timeout(100)
     S.check('barre toujours visible en haut de page', pg.locator('#btn-appeler').is_visible())
     # Tuile bizarre → même dialog
-    pg.click('#btn-bizarre-bar')
+    pg.click('.tuile-bizarre')
     S.check('barre : bizarre ouvre le vérificateur', pg.locator('#dialog-bizarre[open]').count() == 1)
     S.check('bizarre : champ adresse a le focus', pg.evaluate('() => document.activeElement.id') == 'champ-adresse')
     pg.click('#btn-fermer-bizarre')
@@ -74,7 +74,7 @@ def run(S, b):
     ctx.close()
 
     # ================= Dialogs = feuilles plein écran =================
-    for sel, declencheur in [('#dialog-bizarre', '#btn-bizarre-bar'),
+    for sel, declencheur in [('#dialog-bizarre', '.tuile-bizarre'),
                              ('#dialog-distance', '.tuile-distance'),
                              ('#dialog-ajout', '#lien-ajout')]:
         ctx, pg, errs = nouvelle_page(b, mobile=True, width=320, height=700)
@@ -96,7 +96,7 @@ def run(S, b):
     # ================= Vérificateur mobile =================
     ctx, pg, errs = nouvelle_page(b, mobile=True, width=375, height=760)
     charger(pg); fermer_prenom(pg)
-    pg.click('#btn-bizarre-bar')
+    pg.click('.tuile-bizarre')
     pg.fill('#champ-adresse', 'https://www.ameli.fr')
     pg.click('#form-verif button[type="submit"]')
     S.check('verdict vert lisible', 'SÛR' in (pg.text_content('#verif-resultat') or ''))
@@ -141,7 +141,7 @@ def run(S, b):
     pg.on('pageerror', lambda e: errs.append(str(e)))
     charger(pg); fermer_prenom(pg)
     pg.evaluate("() => navigator.clipboard.writeText('https://www.ameli.fr')")
-    pg.click('#btn-bizarre-bar')
+    pg.click('.tuile-bizarre')
     pg.click('#btn-coller')
     pg.wait_for_timeout(400)
     S.check('coller : champ rempli', pg.input_value('#champ-adresse') == 'https://www.ameli.fr')
@@ -150,7 +150,7 @@ def run(S, b):
     # Permission refusée : focus dans le champ, pas de crash
     ctx, pg, errs2 = nouvelle_page(b, mobile=True, width=375, height=760)
     charger(pg); fermer_prenom(pg)
-    pg.click('#btn-bizarre-bar')
+    pg.click('.tuile-bizarre')
     pg.click('#btn-coller')
     pg.wait_for_timeout(300)
     S.check('coller refusé : pas de crash', pg.locator('#dialog-bizarre[open]').count() == 1)
@@ -286,8 +286,9 @@ def run(S, b):
         for mode in ['normal', 'contraste', 'taille3']:
             ctx, pg, errs = nouvelle_page(b, mobile=True, width=w, height=h)
             charger(pg); fermer_prenom(pg)
-            # « Réglages » n'est un pli que sous ~600px ; au-delà le panneau est visible
-            if pg.locator('#btn-reglages').is_visible():
+            # « Réglages » n'existe que sous le breakpoint mobile ; au-dessus,
+            # le panneau est déjà visible.
+            if mode != 'normal' and pg.locator('#btn-reglages').is_visible():
                 pg.click('#btn-reglages')
             if mode == 'contraste':
                 pg.click('#btn-contraste')

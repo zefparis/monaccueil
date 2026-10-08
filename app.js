@@ -1119,9 +1119,6 @@
   function initBizarre() {
     var d = $('dialog-bizarre');
     $('form-verif').addEventListener('submit', function (ev) { ev.preventDefault(); verifierAdresseSaisie(); });
-    // Barre fixe du téléphone : raccourci direct vers le vérificateur
-    var raccourci = $('btn-bizarre-bar');
-    if (raccourci) { raccourci.addEventListener('click', function () { ouvrirDialog(d); $('champ-adresse').focus(); }); }
     // « Coller l'adresse » : Clipboard API uniquement sur action directe de la personne
     var coller = $('btn-coller');
     if (coller) {

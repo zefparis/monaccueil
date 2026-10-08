@@ -311,9 +311,10 @@ chaque client, sur sa machine et son navigateur :
 - [ ] Aucune barre de défilement horizontale, y compris en paysage.
 - [ ] « Réglages » : un bouton écrit déplie le panneau (taille, contraste,
       couleurs) ; jamais d'icône seule.
-- [ ] Barre du bas toujours visible : « Appeler [technicien] » en rouge plein
-      lance l'app Téléphone (lien `tel:`) ; « Un message bizarre ? » ouvre le
-      vérificateur. Le numéro est aussi écrit en clair dans le dialog d'aide.
+- [ ] Barre du bas toujours visible : « Appeler [technicien] » en rouge plein,
+      toute la largeur, lance l'app Téléphone (lien `tel:`). « Un message me
+      paraît bizarre » reste accessible par sa tuile dans « Aide et sécurité ».
+      Le numéro est aussi écrit en clair dans le dialog d'aide.
 
 ### L2. Ouverture des sites
 

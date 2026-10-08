@@ -149,7 +149,7 @@ def run(S, b):
     injecter_config(pgm)
     pgm.evaluate("() => window.scrollTo(0, 400)")
     axe(pgm, S, 'accueil mobile 375')
-    pgm.click('#btn-bizarre-bar')
+    pgm.locator('.tuile-bizarre').click()
     axe(pgm, S, 'dialog bizarre mobile (plein écran)')
     pgm.click('#btn-fermer-bizarre')
     # Barre fixe : navigable au clavier, cibles suffisantes
