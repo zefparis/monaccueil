@@ -40,7 +40,7 @@
       ]
     },
     {
-      "source": "/(index\\.html|style\\.css|app\\.js|verification\\.js|icones\\.js|catalogue\\.js|protection-telephone\\.js|config\\.js|config\\.json|sw\\.js|manifest\\.webmanifest|robots\\.txt|installer\\.html|installer\\.css)",
+      "source": "/(index\\.html|style\\.css|app\\.js|verification\\.js|icones\\.js|catalogue\\.js|protection-telephone\\.js|urgences\\.js|config\\.js|config\\.json|sw\\.js|manifest\\.webmanifest|robots\\.txt|installer\\.html|installer\\.css)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache" }
       ]

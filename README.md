@@ -25,6 +25,7 @@ voit des boutons et un gros bouton rouge « J'ai besoin d'aide ».
 | `app.js` | Logique : rendu des tuiles, aide, réglages, mode technicien |
 | `verification.js` | Analyse locale d'une adresse collée (tuile « Un message me paraît bizarre ») |
 | `protection-telephone.js` | Contenu de la tuile « Protéger mon téléphone » : marques, chemins de réglages, conseils — **modifiable sans toucher à `app.js`** |
+| `urgences.js` | Contenu du bloc « Urgences et arnaques » : règles anti-arnaque, dispositifs de signalement, numéros d'urgence — **modifiable sans toucher à `app.js`** |
 | `config.json` | **La configuration** (prénom, technicien, tuiles, PIN, domaines, arnaques) |
 | `config.js` | Copie de `config.json` lisible en `file://` (fallback) |
 | `icones.js` | Icônes SVG inline (générées depuis `icons/`) |
@@ -198,6 +199,18 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   `monaccueil.protection`) sont lisibles en lecture seule dans le panneau,
   incluses dans le lien personnel `#p=` et la section `personnalisation` de
   l'export (section séparée, revalidée à l'import).
+- `blocUrgences` : `true` par défaut (absent = actif). `false` masque tout le bloc
+  « Urgences et arnaques » : la tuile, le bouton « Urgence » de la barre mobile,
+  l'entrée depuis « Un message me paraît bizarre » et l'alerte du moment (§ 6 ter).
+- `contactsConfiance` : jusqu'à 3 contacts `{ "prenom": "Monique", "numero":
+  "06 11 22 33 44" }` affichés dans l'écran « Urgence santé » (« Appeler mon
+  proche »). Schéma strict : prénom en lettres, numéro au format téléphone,
+  entrées invalides ignorées. Donnée de la configuration (technicien), jamais
+  mélangée à la personnalisation locale de la personne.
+- `alerte` : `{ "actif": bool, "titre": "≤ 80 caractères", "texte": "≤ 200
+  caractères" }`. Bandeau sobre en haut de l'accueil, fermable ; il revient si
+  le texte change (le navigateur compare un haché du contenu, clé
+  `monaccueil.alerte.vue`). Texte brut uniquement : aucune balise.
 - `statistiques` : section ajoutée par l'export (§ 6), ignorée à l'import.
 
 Si `raccourcisseurs` ou `arnaques` manquent (configuration d'un ancien client), les
@@ -504,6 +517,50 @@ seule dans le panneau technicien ; `protectionTelephone: false` masque la tuile.
 **Test** : `node outils/test-protection.js` vérifie que chaque marque a une date
 de vérification et au moins un réglage, que les chemins ont ≥ 2 menus, qu'il n'y
 a ni HTML ni prix. Relancé par `npm run verif`.
+
+---
+
+## 6 ter. Bloc « Urgences et arnaques »
+
+Tuile fixe du groupe « Aide et sécurité » (PC) et bouton **« Urgence »** de la
+barre fixe du bas (mobile, violet — distinct de l'orange « Appeler » et du rouge
+d'aide). Un seul dialog, trois écrans, tout hors ligne :
+
+1. **« Quelqu'un de suspect au téléphone »** (aussi accessible depuis la tuile
+   « Un message me paraît bizarre ») : les 3 règles en gros (« Raccrochez
+   maintenant. Une banque ne vous demande jamais un code, un virement ou
+   d'installer une application. Rappelez vous-même le numéro au dos de votre
+   carte. »), puis « Appeler [nom du technicien] » avec le numéro écrit en clair.
+2. **« J'ai été piégé »** : texte sans jugement, 4 étapes (opposition à la
+   banque, ne rien supprimer, signaler, appeler le technicien) puis les
+   dispositifs officiels : **Perceval** (carte utilisée en ligne, après
+   opposition), **33700** (SMS et appels frauduleux), **Info Escroqueries
+   0 805 805 817**, **THESEE** (plainte en ligne arnaques internet),
+   **PHAROS**, et le dépôt de plainte en commissariat/gendarmerie. Ligne
+   « Dernière vérification » affichée.
+3. **« Urgence santé »** : gros boutons d'appel **15** (SAMU), **18** (pompiers),
+   **112** (urgence européen), **114** (urgence par SMS, sourds et
+   malentendants), puis « Appeler mon proche » avec jusqu'à 3 contacts de la
+   config (`contactsConfiance`). Ligne fixe : « Mon Accueil est une aide, pas
+   un service d'urgence. En cas de danger, appelez le 112. » Le numéro du
+   technicien n'y figure jamais.
+
+**Numéros et dispositifs vérifiés** le 8 octobre 2026 sur les sources
+officielles : service-public.gouv.fr (Perceval : fiche R46526 ; THESEE via Ma
+Sécurité), masecurite.interieur.gouv.fr, arcep.fr et 33700.fr. Aucun numéro non
+confirmé par une source officielle n'est affiché.
+
+**Contenu** : tout vit dans `urgences.js` (`window.MONACCUEIL_URGENCES`),
+revalidé à chaque affichage (textes bornés, aucun HTML) — modifiable sans
+toucher à `app.js`. Mettez la ligne `verifie` à jour après toute correction.
+
+**Alerte du moment** : bandeau sobre en haut de l'accueil (`alerte` dans la
+config, éditable dans le panneau technicien), fermable ; il réapparaît si le
+texte change.
+
+**Test** : `node outils/test-urgences.js` + `tests/suites/test_urgences.py`
+(73 contrôles : écrans, clavier, contacts hostiles, alerte, `blocUrgences`
+à `false`). Relancés par `npm run verif`.
 
 ---
 

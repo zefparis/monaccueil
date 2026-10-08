@@ -68,6 +68,13 @@
     <a id="appeler-stockage" class="bouton bouton-aide" href="#">Appeler</a>
   </div>
 
+  <!-- Alerte du moment (config « alerte ») : sobre, fermable, revient si
+       le texte change — le hash du contenu est comparé à celui mémorisé. -->
+  <div id="bandeau-alerte" class="bandeau-alerte" role="status" hidden>
+    <p><strong id="alerte-titre"></strong> <span id="alerte-texte"></span></p>
+    <button type="button" id="btn-alerte-fermer" class="bouton banniere-fermer" aria-label="Ne plus afficher cette alerte">✕</button>
+  </div>
+
   <main id="contenu">
     <!-- Les tuiles sont générées par app.js, regroupées en familles si la config définit des groupes -->
     <div id="tuiles" role="region" aria-label="Mes services en ligne"></div>
@@ -83,10 +90,11 @@
   </main>
 
   <footer class="pied">
-    <!-- Barre fixe du téléphone : appel direct, pouce atteignable.
+    <!-- Barre fixe du téléphone : appel direct + urgences, pouce atteignable.
          « Un message me paraît bizarre » reste accessible via sa tuile. -->
     <div class="pied-mobile">
       <a id="btn-appeler" class="bouton bouton-aide" href="#"><span id="appeler-icone"></span><span id="appeler-label">Appeler</span></a>
+      <button type="button" id="btn-urgence" class="bouton bouton-urgence">Urgence</button>
     </div>
     <button type="button" id="btn-aide" class="bouton bouton-aide">
       <span id="aide-icone"></span>
@@ -188,9 +196,24 @@
       <ul id="liste-arnaques" class="arnaques"></ul>
     </section>
 
+    <p class="bizarre-lien-suspect">
+      <button type="button" id="lien-suspect" class="bouton bouton-discret">Je suis au téléphone avec quelqu'un de suspect →</button>
+    </p>
     <div class="actions">
       <a id="bizarre-telephone" class="aide-telephone" href="#"></a>
       <button type="button" id="btn-fermer-bizarre" class="bouton bouton-principal">Fermer</button>
+    </div>
+  </dialog>
+
+  <!-- « Urgences et arnaques » : suspect au téléphone / j'ai été piégé /
+       urgence santé. Le contenu affiché vit dans urgences.js ; app.js ne
+       fait que le rendre (textContent, aucun HTML injecté). -->
+  <dialog id="dialog-urgences" class="dialog dialog-urgences" aria-labelledby="urgences-titre-dialog">
+    <h2 id="urgences-titre-dialog">Urgences et arnaques</h2>
+    <div id="urgences-contenu"></div>
+    <div class="actions">
+      <button type="button" id="btn-urgences-retour" class="bouton bouton-discret" hidden>← Retour</button>
+      <button type="button" id="btn-fermer-urgences" class="bouton bouton-principal">Fermer</button>
     </div>
   </dialog>
 
@@ -298,6 +321,8 @@
   <script src="catalogue.js"></script>
   <!-- Contenu « Protéger mon téléphone » : window.MONACCUEIL_PROTECTION -->
   <script src="protection-telephone.js"></script>
+  <!-- Contenu « Urgences et arnaques » : window.MONACCUEIL_URGENCES -->
+  <script src="urgences.js"></script>
   <!-- Configuration embarquée (fallback si config.json ne peut pas être lu, par ex. en file://) -->
   <script src="config.js"></script>
   <!-- Vérification locale d'une adresse (aucun lien ouvert, aucun envoi) ; testé par outils/test-verification.js -->

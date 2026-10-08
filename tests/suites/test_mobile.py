@@ -41,14 +41,15 @@ def run(S, b):
     ctx, pg, errs = nouvelle_page(b, mobile=True, width=375, height=760)
     charger(pg); fermer_prenom(pg)
     S.check('barre : « Appeler » visible', pg.locator('#btn-appeler').is_visible())
-    S.check('barre : un seul bouton (le vérificateur est dans les tuiles)',
-            pg.locator('.pied-mobile .bouton').count() == 1)
+    S.check('barre : « Appeler » + « Urgence » (le vérificateur est dans les tuiles)',
+            pg.locator('.pied-mobile .bouton').count() == 2)
     S.check('barre : Appeler = lien tel:', (pg.get_attribute('#btn-appeler', 'href') or '').startswith('tel:'))
     S.check('barre : Appeler nommé avec le technicien', 'Benji' in (pg.text_content('#btn-appeler') or ''))
     bb = pg.locator('#btn-appeler').bounding_box()
-    S.check('barre : cible ≥ 56 px de haut', bb['height'] >= 56)
-    S.check('barre : Appeler occupe toute la largeur',
-            bb['width'] >= 375 - 30 and bb['x'] <= 20)
+    bu = pg.locator('#btn-urgence').bounding_box()
+    S.check('barre : cibles ≥ 56 px de haut', bb['height'] >= 56 and bu['height'] >= 56)
+    S.check('barre : les 2 boutons remplissent la largeur',
+            bb['x'] <= 20 and bu['x'] + bu['width'] >= 375 - 20)
     S.check('barre : au bas de l\'écran', bb['y'] + bb['height'] >= 700)
     # Visible pendant le défilement (sticky)
     pg.evaluate('() => window.scrollTo(0, 0)')

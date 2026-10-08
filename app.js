@@ -23,6 +23,7 @@
   // Outils d'aide à distance pris en charge (le senior initie et accepte toujours la connexion)
   var OUTILS_DISTANCE = ['quickassist', 'rustdesk'];
   var COULEUR_PROTECTION = '#0f766e';
+  var COULEUR_URGENCE = '#1e40af';   // bleu franc : distinct du rouge d'aide et de l'orange « bizarre »
   var COULEUR_DISTANCE = '#a21caf';
   // Tuile fixe "Un message me paraît bizarre" (orange foncé, blanc dessus = 7:1)
   var COULEUR_BIZARRE = '#9a3412';
@@ -54,6 +55,7 @@
   var CLE_STAT_REFUS = 'monaccueil.stat.ajouts-refuses';
   var CLE_INSTALL_IOS = 'monaccueil.install-ios.ferme';
   var CLE_PROTECTION = 'monaccueil.protection';   // étapes « Protéger mon téléphone » cochées (JSON)
+  var CLE_ALERTE_VUE = 'monaccueil.alerte.vue';   // hash de l'alerte fermée : revient si le texte change
 
   // Prénom : lettres (accents compris), espaces, tiret, apostrophe ; commence par une lettre ; 30 max
   var REGEX_PRENOM = /^[\p{L}][\p{L} '\-]*$/u;
@@ -590,6 +592,13 @@
       numerosUrgence: listeNumeros(c.numerosUrgence),
       // Tuile « Protéger mon téléphone » : affichée sauf si la config dit false
       protectionTelephone: typeof c.protectionTelephone === 'boolean' ? c.protectionTelephone : true,
+      // Bloc « Urgences et arnaques » : affiché sauf si la config dit false
+      blocUrgences: typeof c.blocUrgences === 'boolean' ? c.blocUrgences : true,
+      // Alerte du moment : bandeau sobre en haut de l'accueil, fermable,
+      // qui revient si le texte change
+      alerte: normaliserAlerte(c.alerte),
+      // « Appeler mon proche » : jusqu'à 3 contacts définis par le technicien
+      contactsConfiance: listeContactsConfiance(c.contactsConfiance),
       // Lien d'appel vidéo facultatif : https + domaine de la liste officielle (comme toute tuile)
       lienVisio: (function () {
         var v = typeof c.lienVisio === 'string' ? c.lienVisio.trim() : '';
@@ -948,6 +957,17 @@
         protec.style.setProperty('--couleur', COULEUR_PROTECTION);
         protec.addEventListener('click', function () { ouvrirProtection(); });
         items.push(el('li', null, [protec]));
+      }
+      // Tuile fixe « Urgences et arnaques » : 3 écrans hors ligne (suspect /
+      // piégé / santé), masquée si la config la désactive ou contenu absent
+      if (config.blocUrgences && urgencesDisponible()) {
+        var urg = el('button', { type: 'button', 'class': 'tuile tuile-urgences' }, [
+          creerIcone('sante.svg', COULEUR_URGENCE),
+          el('span', { 'class': 'tuile-label', text: 'Urgences et arnaques' })
+        ]);
+        urg.style.setProperty('--couleur', COULEUR_URGENCE);
+        urg.addEventListener('click', function () { ouvrirUrgences('menu', urg); });
+        items.push(el('li', null, [urg]));
       }
       return items;
     }
@@ -1560,6 +1580,238 @@
   }
 
   /* ------------------------------------------------------------------
+     « Urgences et arnaques » : un dialog, 3 écrans (suspect au téléphone /
+     j'ai été piégé / urgence santé). Tout le texte vit dans urgences.js
+     (window.MONACCUEIL_URGENCES), revalidé avec un schéma strict : aucun
+     HTML, longueurs bornées. Aucun numéro du technicien dans l'écran santé.
+     ------------------------------------------------------------------ */
+
+  var urgencesContenu = null;   // contenu validé {verifie, suspect, piege, sante, menu}
+  var urgencesVue = 'menu';     // 'menu' | 'suspect' | 'piege' | 'sante'
+  var urgencesRetour = null;    // élément à refocaliser à la fermeture
+
+  function normaliserUrgencesContenu() {
+    if (urgencesContenu) { return urgencesContenu; }
+    var brut = window.MONACCUEIL_URGENCES;
+    var sortie = { verifie: '', suspect: null, piege: null, sante: null, menu: [] };
+    if (!brut || typeof brut !== 'object') { urgencesContenu = sortie; return sortie; }
+    sortie.verifie = texteContenu(brut.verifie, 40);
+    // Suspect : 3 règles courtes
+    if (brut.suspect && typeof brut.suspect === 'object') {
+      var regles = [];
+      (Array.isArray(brut.suspect.regles) ? brut.suspect.regles : []).slice(0, 5).forEach(function (r) {
+        var t = texteContenu(r, 300); if (t) { regles.push(t); }
+      });
+      if (regles.length) { sortie.suspect = { titre: texteContenu(brut.suspect.titre, 80), regles: regles }; }
+    }
+    // Piégé : intro + étapes + signalements {nom, detail}
+    if (brut.piege && typeof brut.piege === 'object') {
+      var etapes = [], signalements = [];
+      (Array.isArray(brut.piege.etapes) ? brut.piege.etapes : []).slice(0, 8).forEach(function (e) {
+        var t = texteContenu(e, 300); if (t) { etapes.push(t); }
+      });
+      (Array.isArray(brut.piege.signalements) ? brut.piege.signalements : []).slice(0, 8).forEach(function (s) {
+        var nom = texteContenu(s && s.nom, 60);
+        var detail = texteContenu(s && s.detail, 300);
+        if (nom && detail) { signalements.push({ nom: nom, detail: detail }); }
+      });
+      if (etapes.length) {
+        sortie.piege = { titre: texteContenu(brut.piege.titre, 80),
+                         intro: texteContenu(brut.piege.intro, 300),
+                         etapes: etapes, signalements: signalements };
+      }
+    }
+    // Santé : numéros {numero, nom, detail} + avertissement
+    if (brut.sante && typeof brut.sante === 'object') {
+      var nums = [];
+      (Array.isArray(brut.sante.numeros) ? brut.sante.numeros : []).slice(0, 6).forEach(function (u) {
+        var numero = String(u && u.numero || '').trim();
+        var nom = texteContenu(u && u.nom, 40);
+        var detail = texteContenu(u && u.detail, 80);
+        if (numeroValide(numero) && nom) { nums.push({ numero: numero, nom: nom, detail: detail }); }
+      });
+      if (nums.length) {
+        sortie.sante = { titre: texteContenu(brut.sante.titre, 80), numeros: nums,
+                         proches: texteContenu(brut.sante.proches, 60) || 'Appeler mon proche',
+                         avertissement: texteContenu(brut.sante.avertissement, 200) };
+      }
+    }
+    // Menu : entrées {id, label} limitées aux 3 écrans connus
+    (Array.isArray(brut.menu && brut.menu.choix) ? brut.menu.choix : []).forEach(function (m) {
+      var id = m && m.id, label = texteContenu(m && m.label, 80);
+      if (['suspect', 'piege', 'sante'].indexOf(id) !== -1 && label) {
+        sortie.menu.push({ id: id, label: label });
+      }
+    });
+    urgencesContenu = sortie;
+    return sortie;
+  }
+
+  function urgencesDisponible() {
+    var c = normaliserUrgencesContenu();
+    return c.menu.length > 0 && !!(c.suspect || c.piege || c.sante);
+  }
+
+  function urgencesAfficherRetour(visible) { $('btn-urgences-retour').hidden = !visible; }
+
+  function grosBoutonTel(nom, numero, detail, classe) {
+    var a = el('a', { 'class': classe || 'urgence-appel', href: numeroTel(numero) });
+    a.appendChild(el('strong', { text: numero }));
+    a.appendChild(el('span', { text: nom }));
+    if (detail) { a.appendChild(el('small', { text: detail })); }
+    return a;
+  }
+
+  function rendreUrgencesMenu() {
+    var zone = $('urgences-contenu');
+    vider(zone);
+    urgencesAfficherRetour(false);
+    var c = normaliserUrgencesContenu();
+    var liste = el('div', { 'class': 'urgences-choix' });
+    c.menu.forEach(function (m) {
+      var b = el('button', { type: 'button', 'class': 'urgence-choix urgence-choix-' + m.id },
+        [el('span', { text: m.label })]);
+      b.addEventListener('click', function () {
+        urgencesVue = m.id;
+        urgencesAfficherRetour(true);
+        if (m.id === 'suspect') { rendreUrgencesSuspect(); }
+        else if (m.id === 'piege') { rendreUrgencesPiege(); }
+        else { rendreUrgencesSante(); }
+      });
+      liste.appendChild(b);
+    });
+    zone.appendChild(liste);
+    var premier = liste.querySelector('.urgence-choix');
+    if (premier) { premier.focus(); }
+  }
+
+  /** Écran 1 : suspect au téléphone — 3 règles en très gros + appel direct. */
+  function rendreUrgencesSuspect() {
+    var zone = $('urgences-contenu');
+    vider(zone);
+    var c = normaliserUrgencesContenu().suspect;
+    if (!c) { rendreUrgencesMenu(); return; }
+    var ol = el('ol', { 'class': 'urgences-regles' });
+    c.regles.forEach(function (r) { ol.appendChild(el('li', { text: r })); });
+    zone.appendChild(ol);
+    // Bouton « Appeler [nom] » + numéro écrit en clair à côté
+    var ligne = el('div', { 'class': 'urgence-ligne-appel' });
+    var appel = el('a', { 'class': 'aide-telephone', href: '#' });
+    remplirLienAppel(appel);
+    ligne.appendChild(appel);
+    ligne.appendChild(el('p', { 'class': 'urgence-numero-clair', text: 'Mon numéro : ' + config.technicien.telephone }));
+    zone.appendChild(ligne);
+    $('btn-urgences-retour').focus();
+  }
+
+  /** Écran 2 : j'ai été piégé — sans jugement, 4 étapes + signalements. */
+  function rendreUrgencesPiege() {
+    var zone = $('urgences-contenu');
+    vider(zone);
+    var c = normaliserUrgencesContenu().piege;
+    if (!c) { rendreUrgencesMenu(); return; }
+    if (c.intro) { zone.appendChild(el('p', { 'class': 'urgences-intro', text: c.intro })); }
+    var ol = el('ol', { 'class': 'urgences-etapes' });
+    c.etapes.forEach(function (e) { ol.appendChild(el('li', { text: e })); });
+    zone.appendChild(ol);
+    if (c.signalements.length) {
+      var ul = el('ul', { 'class': 'urgences-signalements' });
+      c.signalements.forEach(function (s) {
+        ul.appendChild(el('li', null, [el('strong', { text: s.nom + ' — ' }), el('span', { text: s.detail })]));
+      });
+      zone.appendChild(ul);
+    }
+    if (normaliserUrgencesContenu().verifie) {
+      zone.appendChild(el('p', { 'class': 'protec-verif discret', text: 'Dernière vérification : ' + normaliserUrgencesContenu().verifie }));
+    }
+    var appel = el('a', { 'class': 'aide-telephone', href: '#' });
+    remplirLienAppel(appel);
+    zone.appendChild(appel);
+    $('btn-urgences-retour').focus();
+  }
+
+  /** Écran 3 : urgence santé — gros boutons d'appel + proches + avertissement.
+      Le numéro du technicien n'y figure jamais. */
+  function rendreUrgencesSante() {
+    var zone = $('urgences-contenu');
+    vider(zone);
+    var c = normaliserUrgencesContenu().sante;
+    if (!c) { rendreUrgencesMenu(); return; }
+    var grille = el('div', { 'class': 'urgences-grille' });
+    c.numeros.forEach(function (u) { grille.appendChild(grosBoutonTel(u.nom, u.numero, u.detail)); });
+    zone.appendChild(grille);
+    if (config.contactsConfiance.length) {
+      zone.appendChild(el('h3', { text: c.proches }));
+      config.contactsConfiance.forEach(function (ct) {
+        zone.appendChild(grosBoutonTel(ct.prenom, ct.numero, '', 'urgence-appel urgence-proche'));
+      });
+    }
+    if (c.avertissement) { zone.appendChild(el('p', { 'class': 'urgences-avertissement', text: c.avertissement })); }
+    $('btn-urgences-retour').focus();
+  }
+
+  function ouvrirUrgences(ecran, retour) {
+    var d = $('dialog-urgences');
+    urgencesVue = ecran || 'menu';
+    urgencesRetour = retour || document.querySelector('.tuile-urgences') || $('btn-urgence');
+    if (urgencesVue === 'suspect') { urgencesAfficherRetour(true); rendreUrgencesSuspect(); }
+    else if (urgencesVue === 'piege') { urgencesAfficherRetour(true); rendreUrgencesPiege(); }
+    else if (urgencesVue === 'sante') { urgencesAfficherRetour(true); rendreUrgencesSante(); }
+    else { rendreUrgencesMenu(); }
+    ouvrirDialog(d);
+  }
+
+  /** Alerte du moment : bandeau fermable qui revient si le texte change. */
+  function hachageSimple(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+    return h.toString(36);
+  }
+
+  function afficherAlerte() {
+    var b = $('bandeau-alerte');
+    var a = config.alerte;
+    if (!b) { return; }
+    if (!a.actif || !a.titre) { b.hidden = true; return; }
+    if (lireStockage(CLE_ALERTE_VUE) === hachageSimple(a.titre + '|' + a.texte)) {
+      b.hidden = true; return;
+    }
+    $('alerte-titre').textContent = a.titre;
+    $('alerte-texte').textContent = a.texte;
+    b.hidden = false;
+  }
+
+  function initUrgences() {
+    var d = $('dialog-urgences');
+    $('btn-fermer-urgences').addEventListener('click', function () {
+      fermerDialog(d);
+      if (urgencesRetour) { urgencesRetour.focus(); }
+    });
+    $('btn-urgences-retour').addEventListener('click', function () {
+      urgencesVue = 'menu';
+      rendreUrgencesMenu();
+    });
+    d.addEventListener('close', function () {
+      if (urgencesRetour && document.activeElement === document.body) { urgencesRetour.focus(); }
+    });
+    $('btn-urgence').addEventListener('click', function () { ouvrirUrgences('menu', $('btn-urgence')); });
+    $('lien-suspect').addEventListener('click', function () {
+      fermerDialog($('dialog-bizarre'));
+      ouvrirUrgences('suspect', document.querySelector('.tuile-bizarre'));
+    });
+    $('btn-alerte-fermer').addEventListener('click', function () {
+      var a = config.alerte;
+      ecrireStockage(CLE_ALERTE_VUE, hachageSimple(a.titre + '|' + a.texte));
+      $('bandeau-alerte').hidden = true;
+    });
+    // La barre mobile et le raccourci du dialog « bizarre » n'affichent le
+    // bloc que s'il est actif
+    var actif = config.blocUrgences && urgencesDisponible();
+    $('btn-urgence').hidden = !actif;
+    $('lien-suspect').hidden = !actif;
+  }
+
+  /* ------------------------------------------------------------------
      Accès au mode technicien : appui long sur le titre, puis code PIN
      ------------------------------------------------------------------ */
 
@@ -1943,6 +2195,31 @@
   function numeroValide(n) { return /^[0-9+().\-\s]{2,20}$/.test(String(n || '').trim()); }
   function numeroTel(n) { return 'tel:' + String(n).replace(/[^0-9+]/g, ''); }
 
+  /** Alerte du moment : {actif, titre ≤ 80, texte ≤ 200} — jamais de HTML. */
+  function normaliserAlerte(a) {
+    var vide = { actif: false, titre: '', texte: '' };
+    if (!a || typeof a !== 'object') { return vide; }
+    var titre = typeof a.titre === 'string' ? a.titre.trim() : '';
+    var texte = typeof a.texte === 'string' ? a.texte.trim() : '';
+    if (titre.length > 80 || texte.length > 200 || titre.indexOf('<') !== -1 || texte.indexOf('<') !== -1) {
+      return vide;
+    }
+    return { actif: a.actif === true, titre: titre, texte: texte };
+  }
+
+  /** Contacts de confiance (config technicien) : prénom + numéro, 3 max. */
+  function listeContactsConfiance(liste) {
+    var out = [];
+    (Array.isArray(liste) ? liste : []).forEach(function (u) {
+      var prenom = String(u && u.prenom || '').trim();
+      var numero = String(u && u.numero || '').trim();
+      if (out.length < 3 && prenomValide(prenom) && numeroValide(numero) && numero.replace(/\D/g, '').length >= 2) {
+        out.push({ prenom: prenom, numero: numero });
+      }
+    });
+    return out;
+  }
+
   function normaliserNumero(u) {
     var nom = String(u && u.nom || '').trim();
     var numero = String(u && u.numero || '').trim();
@@ -1969,6 +2246,15 @@
   function numerosTexte(liste) {
     return (liste || []).map(function (u) { return u.nom + ' | ' + u.numero + (u.detail ? ' | ' + u.detail : ''); }).join('\n');
   }
+  function lireContactsTexte(texte) {
+    return listeContactsConfiance(texte.split('\n').map(function (l) {
+      var m = l.split('|').map(function (s) { return s.trim(); });
+      return { prenom: m[0], numero: m[1] };
+    }));
+  }
+  function contactsTexte(liste) {
+    return (liste || []).map(function (u) { return u.prenom + ' | ' + u.numero; }).join('\n');
+  }
 
   /** Lit les champs du formulaire dans le brouillon (avant toute action). */
   function lireFormulaire() {
@@ -1985,6 +2271,13 @@
     brouillon.palette = p.querySelector('[name="palette-defaut"]').value;
     brouillon.ajoutParPersonne = p.querySelector('[name="ajout-personne"]').value;
     brouillon.protectionTelephone = p.querySelector('[name="protection-tel"]').checked;
+    brouillon.blocUrgences = p.querySelector('[name="urgences-bloc"]').checked;
+    brouillon.alerte = normaliserAlerte({
+      actif: p.querySelector('[name="alerte-actif"]').checked,
+      titre: p.querySelector('[name="alerte-titre"]').value,
+      texte: p.querySelector('[name="alerte-texte"]').value
+    });
+    brouillon.contactsConfiance = lireContactsTexte(p.querySelector('[name="contacts-confiance"]').value);
     brouillon.domainesOfficiels = lireListeTexte(p.querySelector('[name="domaines"]').value);
     brouillon.raccourcisseurs = lireListeTexte(p.querySelector('[name="raccourcisseurs"]').value);
     brouillon.numerosUrgence = lireNumerosTexte(p.querySelector('[name="numeros-urgence"]').value);
@@ -2033,6 +2326,26 @@
     var lignesBrutes = $('panneau-tech').querySelector('[name="numeros-urgence"]').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
     if (lignesBrutes.length !== brouillon.numerosUrgence.length) {
       erreurs.push('Numéros utiles : au moins une ligne est illisible. Format attendu : « Nom | numéro | explication » (explication facultative), nom ≤ 40 caractères, numéro en chiffres.');
+    }
+    // Contacts de confiance : une ligne illisible bloque aussi l'enregistrement
+    var lignesContacts = $('panneau-tech').querySelector('[name="contacts-confiance"]').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    if (lignesContacts.length !== brouillon.contactsConfiance.length || lignesContacts.length > 3) {
+      erreurs.push('Contacts de confiance : au moins une ligne est illisible ou plus de 3 lignes. Format attendu : « Prénom | numéro », prénom en lettres, 3 contacts maximum.');
+    }
+    // Alerte : titre obligatoire si l'alerte est activée
+    if (brouillon.alerte.actif && !brouillon.alerte.titre) {
+      erreurs.push('Alerte du moment : activée sans titre. Décochez-la ou écrivez un titre court.');
+    }
+    var alerteBrute = $('panneau-tech').querySelector('[name="alerte-titre"]').value
+      + $('panneau-tech').querySelector('[name="alerte-texte"]').value;
+    if (alerteBrute.indexOf('<') !== -1) {
+      erreurs.push('Alerte du moment : les signaux « < » ne sont pas autorisés (texte brut uniquement).');
+    }
+    if ($('panneau-tech').querySelector('[name="alerte-titre"]').value.length > 80) {
+      erreurs.push('Alerte du moment : le titre dépasse 80 caractères.');
+    }
+    if ($('panneau-tech').querySelector('[name="alerte-texte"]').value.length > 200) {
+      erreurs.push('Alerte du moment : le texte dépasse 200 caractères.');
     }
     brouillon.arnaques.forEach(function (a, i) {
       if (!a.titre) { erreurs.push('Arnaque n°' + (i + 1) + ' : le titre est vide (supprimez-la ou donnez-lui un titre).'); }
@@ -2092,6 +2405,10 @@
     var ok = ecrireStockage(CLE_CONFIG, JSON.stringify(config));
     afficherEntete();
     afficherTuiles();
+    var actif = config.blocUrgences && urgencesDisponible();
+    $('btn-urgence').hidden = !actif;
+    $('lien-suspect').hidden = !actif;
+    afficherAlerte();
     var msgs = [ok
       ? 'Enregistré et appliqué sur cet ordinateur. Pensez à exporter pour conserver une copie.'
       : 'Appliqué, mais impossible de mémoriser dans ce navigateur : exportez la configuration et remplacez les fichiers.'];
@@ -2466,10 +2783,13 @@
     });
     var caseProtec = el('input', { id: 'tech-protec', name: 'protection-tel', type: 'checkbox' });
     caseProtec.checked = brouillon.protectionTelephone !== false;
+    var caseUrgences = el('input', { id: 'tech-urgences-bloc', name: 'urgences-bloc', type: 'checkbox' });
+    caseUrgences.checked = brouillon.blocUrgences !== false;
     p.appendChild(el('div', { 'class': 'champs' }, [
       el('label', { 'for': 'tech-palette' }, ['Couleurs proposées par défaut', selPalette]),
       el('label', { 'for': 'tech-ajout' }, ['La personne peut ajouter des boutons', selAjout]),
-      el('label', { 'for': 'tech-protec', 'class': 'ligne' }, [caseProtec, 'Afficher la tuile « Protéger mon téléphone »'])]));
+      el('label', { 'for': 'tech-protec', 'class': 'ligne' }, [caseProtec, 'Afficher la tuile « Protéger mon téléphone »']),
+      el('label', { 'for': 'tech-urgences-bloc', 'class': 'ligne' }, [caseUrgences, 'Afficher le bloc « Urgences et arnaques »'])]));
 
     // Personnalisation locale de la personne (lecture seule) : couleurs et cases ajoutées
     p.appendChild(el('h2', { text: 'Personnalisation de la personne' }));
@@ -2635,6 +2955,23 @@
     p.appendChild(el('p', { text: 'Un numéro par ligne : « Nom | numéro | explication courte ». Exemple : Info Escroqueries | 0 805 805 817 | « Mon message est-il une arnaque ? »' }));
     p.appendChild(el('label', { 'for': 'tech-urgences' }, ['Liste des numéros',
       el('textarea', { id: 'tech-urgences', name: 'numeros-urgence', spellcheck: 'false' }, [numerosTexte(brouillon.numerosUrgence)])]));
+
+    // Bloc « Urgences et arnaques » : contacts de confiance + alerte du moment
+    p.appendChild(el('h3', { text: 'Contacts de confiance (« Appeler mon proche »)' }));
+    p.appendChild(el('p', { text: 'Un contact par ligne : « Prénom | numéro », 3 maximum. Affichés dans l\'écran « Urgence santé » ; le vôtre n\'y figure jamais.' }));
+    p.appendChild(el('label', { 'for': 'tech-contacts' }, ['Liste des contacts',
+      el('textarea', { id: 'tech-contacts', name: 'contacts-confiance', spellcheck: 'false' }, [contactsTexte(brouillon.contactsConfiance)])]));
+    p.appendChild(el('h3', { text: 'Alerte du moment' }));
+    p.appendChild(el('p', { text: 'Bandeau sobre en haut de l\'accueil (ex. « Arnaque aux faux colis cette semaine »). Fermable par la personne ; il revient si le texte change.' }));
+    var caseAlerte = el('input', { id: 'tech-alerte-actif', name: 'alerte-actif', type: 'checkbox' });
+    caseAlerte.checked = brouillon.alerte && brouillon.alerte.actif === true;
+    p.appendChild(el('label', { 'for': 'tech-alerte-actif', 'class': 'ligne' }, [caseAlerte, 'Afficher l\'alerte']));
+    p.appendChild(el('label', { 'for': 'tech-alerte-titre' }, ['Titre (80 caractères max)',
+      el('input', { id: 'tech-alerte-titre', name: 'alerte-titre', type: 'text', maxlength: '80',
+        value: brouillon.alerte ? brouillon.alerte.titre : '', autocomplete: 'off' })]));
+    p.appendChild(el('label', { 'for': 'tech-alerte-texte' }, ['Texte (200 caractères max)',
+      el('input', { id: 'tech-alerte-texte', name: 'alerte-texte', type: 'text', maxlength: '200',
+        value: brouillon.alerte ? brouillon.alerte.texte : '', autocomplete: 'off' })]));
 
     var quitterBas = el('button', { type: 'button', 'class': 'bouton bouton-principal', text: 'Quitter le mode technicien' });
     quitterBas.addEventListener('click', quitterModeTech);
@@ -3006,6 +3343,8 @@
         } else { initAjout(); initRetrait(); }
         chargerProtection();
         initProtection();
+        initUrgences();
+        afficherAlerte();
         // « Partager vers Mon Accueil » (share_target) : pré-remplit le vérificateur
         traiterPartage();
         // Premier lancement : demander le prénom seulement si ni choisi ni configuré,

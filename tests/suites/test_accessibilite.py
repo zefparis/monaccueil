@@ -136,6 +136,32 @@ def run(S, b):
     S.check('clavier protection : focus rendu à la tuile',
             pg.evaluate("() => document.activeElement.classList.contains('tuile-protec')"))
 
+    # ---------- Dialog « Urgences et arnaques » (4 écrans) ----------
+    pg.locator('.tuile-urgences').click()
+    axe(pg, S, 'dialog urgences (menu)')
+    focus_reste_dans(pg, '#dialog-urgences', S, 'urgences')
+    pg.click('button:has-text("suspect au téléphone")')
+    axe(pg, S, 'dialog urgences (suspect)')
+    pg.click('#btn-urgences-retour')
+    pg.click('button:has-text("ai été piégé")')
+    axe(pg, S, 'dialog urgences (piégé)')
+    pg.click('#btn-urgences-retour')
+    pg.click('button:has-text("Urgence santé")')
+    axe(pg, S, 'dialog urgences (santé)')
+    pg.keyboard.press('Escape')
+    S.check('clavier urgences : Échap ferme', pg.locator('#dialog-urgences[open]').count() == 0)
+    S.check('clavier urgences : focus rendu à la tuile',
+            pg.evaluate("() => document.activeElement.classList.contains('tuile-urgences')"))
+    # Bandeau d'alerte (activé via config)
+    pg.evaluate("""() => {
+      const c = JSON.parse(localStorage.getItem('monaccueil.config'));
+      c.alerte = {actif: true, titre: 'Faux colis en circulation', texte: 'Ne cliquez pas le lien, appelez-moi.'};
+      localStorage.setItem('monaccueil.config', JSON.stringify(c));
+    }""")
+    charger(pg); fermer_prenom(pg)
+    axe(pg, S, 'bandeau alerte')
+    S.check('alerte : bouton fermer étiqueté', pg.locator('#btn-alerte-fermer').is_visible())
+
     # ---------- Dialog PIN ----------
     ouvrir_tech(pg)
     axe(pg, S, 'panneau technicien')

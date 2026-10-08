@@ -10,6 +10,9 @@
   "ouvertureMobile": "onglet",
   "lienVisio": "",
   "protectionTelephone": true,
+  "blocUrgences": true,
+  "contactsConfiance": [],
+  "alerte": { "actif": false, "titre": "", "texte": "" },
   "numerosUrgence": [
     {
       "nom": "Info Escroqueries",

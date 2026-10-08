@@ -210,6 +210,31 @@ chaque client, sur sa machine et son navigateur :
       correspondent aux vrais intitulés français — les textes de
       `protection-telephone.js` seront corrigés après ces vérifications.
 
+## F quinquies. Bloc « Urgences et arnaques »
+
+- [ ] La tuile figure dans « Aide et sécurité » (PC) ; sur téléphone, le bouton
+      « Urgence » de la barre du bas est violet (distinct de « Appeler »).
+- [ ] « Quelqu'un de suspect au téléphone » : les 3 règles en gros (raccrocher,
+      jamais de code/virement/application, rappeler le numéro au dos de la
+      carte), puis « Appeler [technicien] » avec le numéro en clair. La même
+      entrée existe depuis « Un message me paraît bizarre ».
+- [ ] « J'ai été piégé » : texte rassurant, 4 étapes, signalements officiels
+      (Perceval, 33700, Info Escroqueries 0 805 805 817, THESEE, PHAROS, dépôt
+      de plainte), ligne « Dernière vérification ».
+- [ ] « Urgence santé » : 15, 18, 112, 114 en très gros avec liens `tel:` ;
+      « Appeler mon proche » affiche les contacts de confiance configurés ;
+      la ligne « aide, pas un service d'urgence » figure en bas ; le numéro
+      du technicien n'y figure PAS.
+- [ ] **Sur un vrai téléphone** : taper 15/112 ouvre bien la numérotation ;
+      le bouton « Urgence » de la barre reste atteignable au pouce.
+- [ ] Panneau technicien : case « bloc », liste « Prénom | numéro » (max 3,
+      ligne illisible → erreur), champs d'alerte.
+- [ ] Alerte du moment : activée dans la config, elle apparaît en haut ;
+      « Ne plus afficher » la fait disparaître, et elle revient si le texte
+      change dans `config.json`.
+- [ ] `blocUrgences: false` : ni tuile, ni bouton de barre, ni entrée dans
+      « bizarre ».
+
 ## G. Clavier (si le client utilise peu la souris)
 
 - [ ] Tab passe de bouton en bouton, le contour de focus est bien visible.

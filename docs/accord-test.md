@@ -27,6 +27,8 @@ Entre ____________________________ (qui installe) et ___________________________
   couper à tout moment.
 - Vous gardez une fiche imprimée avec le numéro de téléphone : appelez, même pour
   une question qui vous paraît bête.
+- **Mon Accueil est une aide, pas un service d'urgence.** En cas de danger ou
+  d'urgence santé, appelez le 15, le 18 ou le 112 — même sans l'ordinateur.
 
 ## Pour tout enlever
 

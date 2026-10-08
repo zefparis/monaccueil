@@ -281,6 +281,7 @@ html.contraste-eleve .retour-accueil { border-color: #ffff00; }
   gap: clamp(0.45rem, 0.9vw, 0.8rem);
 }
 @media (max-width: 1100px) { .tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1400px) { .tuiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .tuiles li { display: flex; }   /* la tuile remplit toute la cellule : hauteurs égales par ligne */
 
 .tuile {
@@ -900,6 +901,60 @@ html.contraste-eleve .palette-nom { color: #ffffff; }
 .bandeau-stockage p { margin: 0; font-size: 1.15rem; font-weight: 700; }
 .bandeau-stockage .bouton-aide { position: static; min-height: 3rem; }
 html.contraste-eleve .bandeau-stockage { border-color: #ffff00; }
+
+/* Bandeau « Alerte du moment » : sobre, texte simple, fermable */
+.bandeau-alerte {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+  padding: 0.6rem 1rem;
+  border: 0.2rem solid #b45309;
+  border-radius: 0.8rem;
+  background: var(--carte);
+}
+.bandeau-alerte[hidden] { display: none; }
+.bandeau-alerte p { margin: 0; font-size: 1.1rem; }
+.bandeau-alerte p strong { display: block; font-size: 1.2rem; }
+html.contraste-eleve .bandeau-alerte { border-color: #ffff00; }
+
+/* Écrans « Urgences et arnaques » */
+.urgences-choix { display: grid; gap: 1rem; margin-top: 1rem; }
+@media (min-width: 700px) { .urgences-choix { grid-template-columns: 1fr 1fr; } }
+.urgence-choix { font-size: var(--taille-texte); text-align: left; padding: 1.2rem; }
+.urgences-intro { font-size: var(--taille-texte); margin: 0 0 0.8rem; }
+.urgences-regles { font-size: var(--taille-texte); line-height: 1.5; margin: 0 0 1.2rem; }
+.urgences-etapes { font-size: var(--taille-texte); line-height: 1.5; margin: 0 0 1rem; }
+.urgences-signalements { font-size: 1.1rem; line-height: 1.6; margin: 0 0 1rem; }
+.urgences-verification { font-size: 1rem; color: var(--texte-doux); margin: 0.4rem 0 1rem; }
+.urgences-avertissement { font-size: var(--taille-texte); font-weight: 700; margin: 1rem 0 0; }
+.urgences-grille { display: grid; gap: 0.8rem; margin-bottom: 1rem; }
+@media (min-width: 700px) { .urgences-grille { grid-template-columns: 1fr 1fr; } }
+/* Gros bouton d'appel : numéro en très gros, aspect bouton (pas un lien souligné) */
+.urgence-appel {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.15rem; font-size: var(--taille-texte); padding: 0.7rem;
+  color: var(--texte); background: var(--carte);
+  border: 0.2rem solid var(--texte); border-radius: var(--rayon);
+  text-decoration: none;
+}
+.urgence-appel strong { font-size: 1.7em; line-height: 1.1; }
+.urgence-appel small { font-size: 0.85em; }
+html.contraste-eleve .urgence-appel { background: #000; color: #fff; border-color: #ffff00; }
+html.contraste-eleve .urgence-appel strong { color: #ffff00; }
+.urgence-ligne-appel {
+  display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+  font-size: var(--taille-texte); padding: 0.9rem 1rem;
+  border: 0.15rem solid var(--bordure); border-radius: 0.8rem; background: var(--carte);
+}
+.urgence-numero-clair { font-weight: 700; font-size: 1.3em; }
+html.contraste-eleve .urgence-ligne-appel { border-color: #ffffff; }
+
+/* Bouton « Urgence » de la barre fixe : violet, distinct de l'orange « Appeler » et du rouge d'aide */
+.bouton-urgence { background: #5b21b6; color: #ffffff; border: none; }
+html.contraste-eleve .bouton-urgence { background: #000000; color: #ffff00; border: 0.15rem solid #ffff00; }
 
 /* Diagnostic du stockage (mode technicien) */
 .diag-stockage { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.8rem; margin: 0.3rem 0 0.8rem; }

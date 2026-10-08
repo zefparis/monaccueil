@@ -108,7 +108,7 @@ S.check('aucun fichier outils/ dans le déployé',
 S.check('aucun .md déployé', not any(d.endswith('.md') for d in deployes))
 S.check('aucun .py déployé', not any(d.endswith('.py') for d in deployes))
 attendus = {'index.html', 'installer.html', 'style.css', 'installer.css', 'app.js',
-            'verification.js', 'catalogue.js', 'protection-telephone.js',
+            'verification.js', 'catalogue.js', 'protection-telephone.js', 'urgences.js',
             'config.js', 'config.json', 'icones.js',
             'sw.js', 'manifest.webmanifest', 'vercel.json', 'robots.txt'}
 orphelins = [d for d in deployes if not d.startswith('icons/') and d not in attendus]

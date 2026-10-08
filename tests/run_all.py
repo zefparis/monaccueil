@@ -29,6 +29,7 @@ ETAPES = [
     ('node-verification', ['node', 'outils/test-verification.js']),
     ('node-palettes', ['node', 'outils/test-palettes.js']),
     ('node-protection', ['node', 'outils/test-protection.js']),
+    ('node-urgences', ['node', 'outils/test-urgences.js']),
     ('deploiement', [sys.executable, 'tests/suites/test_deploiement.py']),
     ('smoke', [sys.executable, 'tests/suites/test_smoke.py']),
     ('prenom', [sys.executable, 'tests/suites/test_prenom.py']),
@@ -41,6 +42,7 @@ ETAPES = [
     ('verification', [sys.executable, 'tests/suites/test_verification.py']),
     ('technicien', [sys.executable, 'tests/suites/test_technicien.py']),
     ('protection', [sys.executable, 'tests/suites/test_protection.py']),
+    ('urgences', [sys.executable, 'tests/suites/test_urgences.py']),
     ('accessibilite', [sys.executable, 'tests/suites/test_accessibilite.py']),
 ]
 
