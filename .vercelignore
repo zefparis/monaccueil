@@ -4,6 +4,9 @@
 
 # Outils de développement et tests (jamais servis)
 outils/
+tests/
+package.json
+package-lock.json
 
 # Kit de test pilote (documentation interne)
 docs/

@@ -7,3 +7,7 @@ sauvegardes/
 
 # Exports de journaux d'intervention (contiennent des dates/notes)
 *.csv
+
+# Python / outillage de test
+__pycache__/
+node_modules/

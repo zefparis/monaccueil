@@ -595,3 +595,67 @@ Sans clé USB ni script :
 
 Le dialog « Aide à distance » adapte son étape 2 : raccourci Bureau en
 `file://`, « touche Windows → tapez Assistance rapide (ou RustDesk) » en https.
+
+## 11. Tests automatisés
+
+Les suites de vérification vivent dans `tests/` (dossier **exclu du déploiement**
+par `.vercelignore` : rien de tout cela n'est livré au site).
+
+### Installation (une fois)
+
+```bash
+python3 -m pip install -r tests/requirements-test.txt
+python3 -m playwright install chromium
+```
+
+Node.js doit être présent (tests unitaires + serveur de test). Aucune
+dépendance n'est nécessaire à l'application elle-même.
+
+### Lancer l'ensemble
+
+```bash
+npm run test        # ou : python3 tests/run_all.py
+npm run verif       # même chose — à lancer avant chaque commit
+```
+
+`run_all.py` démarre `tests/serveur.js` (serveur statique sans dépendance qui
+rejoue les en-têtes de `vercel.json` : CSP, X-Frame-Options…), exécute les
+tests Node puis chaque suite Playwright, et termine par un résumé
+(contrôles par suite, échecs, durée). **Code de sortie non nul si le moindre
+contrôle échoue** — bloque avant commit.
+
+### Suites
+
+| Suite | Contenu |
+|---|---|
+| `node-verification` | 70 cas unitaires du vérificateur d'adresses |
+| `node-palettes` | 34 combinaisons de contraste des palettes |
+| `deploiement` | garde-fou : `.vercelignore`, inventaire déployé = fichiers référencés, aucun orphelin ni fichier de test |
+| `smoke` | en-têtes de sécurité, chargement bureau + mobile, aucune erreur console |
+| `prenom` | premier lancement, validation stricte, « Plus tard », priorité choix > config |
+| `fenetres` | fenêtre dédiée nommée, repli onglet (écran étroit, popup bloquée, option), mobile, bandeau de retour |
+| `design` | pas de défilement aux résolutions courantes, 6 palettes, contraste, taille maximale |
+| `perso` | catalogue 68 services / 12 familles, ajout libre + PIN, doublons, retrait, max 8, mode « non » |
+| `mobile` | colonnes, barre fixe, share target, Coller, « Besoin d'aide ? », appui long, installation Android/iOS |
+| `persistance` | double écriture localStorage ⇄ IndexedDB, lien `#p=` (force=1, hostiles), bandeau stockage, diagnostic |
+| `journal` | interventions, résumé, export/import CSV (BOM, neutralisation des formules, doublons) |
+| `verification` | verdicts vert/rouge/vide, raisons, statistiques, 68/68 catalogue vert |
+| `technicien` | appui long, PIN (refus, ralentissement), sauvegarde, quitter, `modeTechnicien:false` |
+
+Chaque suite peut aussi se lancer seule : `python3 tests/suites/test_mobile.py`
+(le serveur doit tourner : `node tests/serveur.js`).
+
+### Captures de référence
+
+`tests/captures/` contient quelques images produites par les suites
+(bureau, contraste élevé, mobile, catalogue) — utiles pour comparer un rendu
+après modification du CSS.
+
+### Avant chaque commit
+
+`npm run verif` (le lanceur complet). Pour en faire un hook Git automatique :
+
+```bash
+printf '#!/bin/sh\nnpm run verif || exit 1\n' > .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```

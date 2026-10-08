@@ -1,0 +1,4 @@
+# Dépendances de test UNIQUEMENT — jamais livrées au site (tests/ est
+# exclu du déploiement par .vercelignore). L'application elle-même n'a
+# aucune dépendance.
+playwright>=1.40

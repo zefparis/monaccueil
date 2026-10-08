@@ -1,0 +1,9 @@
+{
+  "name": "monaccueil-tests",
+  "private": true,
+  "description": "Scripts de vérification de Mon Accueil. Aucune dépendance runtime : l'application reste 100% statique.",
+  "scripts": {
+    "test": "python3 tests/run_all.py",
+    "verif": "python3 tests/run_all.py"
+  }
+}
