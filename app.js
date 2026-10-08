@@ -136,6 +136,247 @@
 
   function copieProfonde(obj) { return JSON.parse(JSON.stringify(obj)); }
 
+  /* ------------------------------------------------------------------
+     Persistance robuste : localStorage + IndexedDB en miroir, lien
+     personnel en fragment d'URL (jamais envoyé au serveur), diagnostic.
+     Aucun réseau : tout reste sur la machine.
+     ------------------------------------------------------------------ */
+
+  var stockageOK = false;          // test écriture/lecture/suppression localStorage
+  var idbDisponible = false;       // indexedDB ouverte avec succès
+  var lienPersonnelVu = false;     // un fragment #p= était présent au chargement
+  var resemerIDB = false;          // localStorage plein, IndexedDB vide → re-sème après lecture
+
+  var DB_NOM = 'monaccueil';
+  var DB_STORE = 'donnees';
+  var CLE_IDB = 'personne';        // un seul enregistrement versionné
+  var TAILLE_MAX_LIEN = 4096;      // le lien personnel est refusé au-delà de 4 Ko
+
+  // Une promesse d'ouverture partagée (une seule base, un seul store)
+  var idbBase = null;
+  function idbOuvrir() {
+    if (idbBase) { return idbBase; }
+    idbBase = new Promise(function (res) {
+      try {
+        if (!window.indexedDB) { res(null); return; }
+        var req = indexedDB.open(DB_NOM, 1);
+        req.onupgradeneeded = function () { req.result.createObjectStore(DB_STORE); };
+        req.onsuccess = function () { idbDisponible = true; res(req.result); };
+        req.onerror = function () { res(null); };
+        req.onblocked = function () { res(null); };
+      } catch (e) { res(null); }
+    });
+    return idbBase;
+  }
+
+  function idbLirePersonne() {
+    return idbOuvrir().then(function (db) {
+      if (!db) { return null; }
+      return new Promise(function (res) {
+        try {
+          var rq = db.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).get(CLE_IDB);
+          rq.onsuccess = function () { res(rq.result || null); };
+          rq.onerror = function () { res(null); };
+        } catch (e) { res(null); }
+      });
+    });
+  }
+
+  function idbEcrirePersonne(obj) {
+    return idbOuvrir().then(function (db) {
+      if (!db) { return false; }
+      return new Promise(function (res) {
+        try {
+          var tx = db.transaction(DB_STORE, 'readwrite');
+          tx.objectStore(DB_STORE).put(obj, CLE_IDB);
+          tx.oncomplete = function () { res(true); };
+          tx.onerror = function () { res(false); };
+          tx.onabort = function () { res(false); };
+        } catch (e) { res(false); }
+      });
+    });
+  }
+
+  function idbEffacerPersonne() {
+    return idbOuvrir().then(function (db) {
+      if (!db) { return; }
+      try { db.transaction(DB_STORE, 'readwrite').objectStore(DB_STORE).delete(CLE_IDB); } catch (e) { /* silencieux */ }
+    });
+  }
+
+  /** L'objet unique versionné partagé par IndexedDB et le lien personnel. */
+  function sauvegardePersonne() {
+    return {
+      v: 1,
+      prenom: prenomChoisi || '',
+      plustard: lireStockage(CLE_PRENOM_PLUSTARD) === '1' ? 1 : 0,
+      palette: paletteChoisie || '',
+      perso: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; }),
+      reglages: {
+        taille: taille,
+        contraste: document.documentElement.classList.contains('contraste-eleve') ? 1 : 0
+      }
+    };
+  }
+
+  /** Recopie la personnalisation courante dans IndexedDB (miroir du localStorage). */
+  function synchroniserIDB() {
+    idbEcrirePersonne(sauvegardePersonne()).catch(function () { /* silencieux */ });
+  }
+
+  /** Test réel : écriture + lecture + suppression d'une clé témoin. */
+  function testerStockage() {
+    try {
+      window.localStorage.setItem('monaccueil.test', '1');
+      var ok = window.localStorage.getItem('monaccueil.test') === '1';
+      window.localStorage.removeItem('monaccueil.test');
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  /** Vrai si aucune personnalisation n'est présente en localStorage.
+      Les réglages par défaut (taille 1, pas de contraste) ne comptent pas. */
+  function stockageVide() {
+    var t = parseInt(lireStockage(CLE_TAILLE), 10);
+    var c = lireStockage(CLE_CONTRASTE);
+    return !lireStockage(CLE_PRENOM) && !lireStockage(CLE_PALETTE)
+      && !lireStockage(CLE_PERSO) && (isNaN(t) || t === 1) && c !== '1';
+  }
+
+  /** Affiche l'avertissement sobre quand les réglages ne peuvent pas être gardés. */
+  function afficherBandeauStockage() {
+    var b = $('bandeau-stockage');
+    if (b) { b.hidden = false; }
+  }
+
+  /**
+   * Au chargement : teste localStorage, relit l'enregistrement IndexedDB et
+   * restaure chaque clé absente depuis le miroir (validation stricte à la
+   * relecture). Si c'est localStorage qui est plein, re-sème IndexedDB.
+   */
+  function preparerStockage() {
+    stockageOK = testerStockage();
+    var promesse = idbLirePersonne().then(function (idb) {
+      var change = false;
+      if (idb && typeof idb === 'object' && idb.v === 1) {
+        if (!lireStockage(CLE_PRENOM) && typeof idb.prenom === 'string' && prenomValide(idb.prenom)) {
+          ecrireStockage(CLE_PRENOM, idb.prenom); change = true;
+        }
+        if (lireStockage(CLE_PRENOM_PLUSTARD) === null && idb.plustard === 1) {
+          ecrireStockage(CLE_PRENOM_PLUSTARD, '1'); change = true;
+        }
+        if (!lireStockage(CLE_PALETTE) && PALETTES.indexOf(idb.palette) !== -1) {
+          ecrireStockage(CLE_PALETTE, idb.palette); change = true;
+        }
+        if (lireStockage(CLE_PERSO) === null && Array.isArray(idb.perso)) {
+          ecrireStockage(CLE_PERSO, JSON.stringify(normaliserPerso(idb.perso))); change = true;
+        }
+        if (idb.reglages && typeof idb.reglages === 'object') {
+          var t = parseInt(idb.reglages.taille, 10);
+          if (lireStockage(CLE_TAILLE) === null && t >= 1 && t <= 3) {
+            ecrireStockage(CLE_TAILLE, String(t)); change = true;
+          }
+          if (lireStockage(CLE_CONTRASTE) === null && (idb.reglages.contraste === 0 || idb.reglages.contraste === 1)) {
+            ecrireStockage(CLE_CONTRASTE, String(idb.reglages.contraste)); change = true;
+          }
+        }
+      }
+      // Re-sème la source vide — différé après la lecture du localStorage
+      // (chargerPrenomChoisi/chargerPerso n'ont pas encore tourné ici)
+      resemerIDB = change || !idb;
+      if (!stockageOK) { afficherBandeauStockage(); }
+    });
+    return promesse.catch(function () { if (!stockageOK) { afficherBandeauStockage(); } });
+  }
+
+  /** storage.persist() : uniquement après une action de la personne. */
+  var persistanceDemandee = false;
+  function demanderPersistance() {
+    if (persistanceDemandee) { return; }
+    persistanceDemandee = true;
+    try {
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(function () { /* refusé : silencieux */ });
+      }
+    } catch (e) { /* silencieux */ }
+  }
+
+  /**
+   * Lien personnel « #p=<base64url> » : décode, valide avec le même schéma
+   * strict que l'import (types, longueurs, listes blanches, https, domaines
+   * vérifiés pour les cases ajoutées), puis hydrate le stockage si celui-ci
+   * est vide — ou si le technicien a ajouté « &force=1 ». Le fragment est
+   * nettoyé de la barre d'adresse et n'est jamais envoyé ni journalisé.
+   * Renvoie true si des données ont été hydratées.
+   */
+  function traiterLienPersonnel() {
+    var frag = '';
+    try { frag = location.hash || ''; } catch (e) { return false; }
+    if (!frag || frag.indexOf('p=') === -1) { return false; }
+    lienPersonnelVu = true;
+    var q;
+    try { q = new URLSearchParams(frag.slice(1)); } catch (e) { return false; }
+    var b64 = q.get('p') || '';
+    var force = q.get('force') === '1';
+    // Nettoyage immédiat : rien ne doit rester visible dans la barre d'adresse
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file: */ }
+    if (!b64 || b64.length > TAILLE_MAX_LIEN) { return false; }
+    var obj = null;
+    try {
+      var json = decodeURIComponent(escape(atob(b64.replace(/-/g, '+').replace(/_/g, '/'))));
+      if (json.length > TAILLE_MAX_LIEN) { return false; }
+      obj = JSON.parse(json);
+    } catch (e) { return false; }
+    if (!obj || typeof obj !== 'object' || obj.v !== 1) { return false; }
+    // Jamais d'écrasement silencieux : vide seulement, ou force=1 posé par le technicien
+    if (!stockageVide() && !force) { return false; }
+    if (typeof obj.prenom === 'string' && prenomValide(obj.prenom.trim())) {
+      prenomChoisi = obj.prenom.trim();
+      ecrireStockage(CLE_PRENOM, prenomChoisi);
+      ecrireStockage(CLE_PRENOM_PLUSTARD, null);
+    }
+    if (PALETTES.indexOf(obj.palette) !== -1) {
+      paletteChoisie = obj.palette;
+      ecrireStockage(CLE_PALETTE, obj.palette);
+    }
+    if (Array.isArray(obj.perso)) {
+      // Schéma strict + chaque adresse doit être reconnue par le vérificateur
+      tuilesPerso = normaliserPerso(obj.perso).filter(function (t) {
+        return window.MONACCUEIL_VERIF.verifierAdresse(t.url, domainesReconnus(), config.raccourcisseurs).verdict === 'vert';
+      });
+      sauvegarderPerso();
+    }
+    if (obj.reglages && typeof obj.reglages === 'object') {
+      var t = parseInt(obj.reglages.taille, 10);
+      if (t >= 1 && t <= 3) { appliquerTaille(t); }
+      if (obj.reglages.contraste === 0 || obj.reglages.contraste === 1) {
+        appliquerContraste(obj.reglages.contraste === 1);
+      }
+    }
+    synchroniserIDB();
+    return true;
+  }
+
+  /** Relit stockage → état courant après hydratation par lien (initReglages est déjà passé). */
+  function relireApresHydratation() {
+    var t = parseInt(lireStockage(CLE_TAILLE), 10);
+    appliquerTaille(isNaN(t) ? 1 : t);
+    appliquerContraste(lireStockage(CLE_CONTRASTE) === '1');
+    paletteChoisie = lireStockage(CLE_PALETTE) || '';
+    chargerPrenomChoisi();
+    chargerPerso();
+  }
+
+  /** Lien personnel « #p= » : la base courante + le fragment (jamais en query). */
+  function genererLienPersonnel(avecPrenom) {
+    var obj = sauvegardePersonne();
+    delete obj.plustard;
+    if (!avecPrenom) { delete obj.prenom; }
+    var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return location.href.split('#')[0] + '#p=' + b64;
+  }
+
   function majusculeInitiale(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
   /* ------------------------------------------------------------------
@@ -457,6 +698,7 @@
 
   function plusTardPrenom() {
     ecrireStockage(CLE_PRENOM_PLUSTARD, '1');   // « plus tard » mémorisé, rien d'autre
+    synchroniserIDB();
     fermerDialog($('dialog-prenom'));
   }
 
@@ -476,6 +718,8 @@
         prenomChoisi = saisie;
         ecrireStockage(CLE_PRENOM, saisie);
         ecrireStockage(CLE_PRENOM_PLUSTARD, null);   // le choix remplace « plus tard »
+        synchroniserIDB();
+        demanderPersistance();                      // storage.persist() après une action utilisateur
         $('prenom-erreur').textContent = '';
         fermerDialog(d);
         afficherEntete();
@@ -894,6 +1138,7 @@
      ------------------------------------------------------------------ */
 
   var taille = 1;
+  var initReglagesEnCours = false;   // pas de persistance pendant la relecture initiale
 
   function appliquerTaille(n) {
     taille = Math.min(3, Math.max(1, n));
@@ -902,16 +1147,17 @@
     html.classList.add('taille-' + taille);
     $('btn-taille-moins').disabled = taille === 1;
     $('btn-taille-plus').disabled = taille === 3;
-    ecrireStockage(CLE_TAILLE, String(taille));
+    if (!initReglagesEnCours) { ecrireStockage(CLE_TAILLE, String(taille)); synchroniserIDB(); }
   }
 
   function appliquerContraste(actif) {
     document.documentElement.classList.toggle('contraste-eleve', actif);
     $('btn-contraste').setAttribute('aria-pressed', actif ? 'true' : 'false');
-    ecrireStockage(CLE_CONTRASTE, actif ? '1' : '0');
+    if (!initReglagesEnCours) { ecrireStockage(CLE_CONTRASTE, actif ? '1' : '0'); synchroniserIDB(); }
   }
 
   function initReglages() {
+    initReglagesEnCours = true;
     var t = parseInt(lireStockage(CLE_TAILLE), 10);
     appliquerTaille(isNaN(t) ? 1 : t);
     appliquerContraste(lireStockage(CLE_CONTRASTE) === '1');
@@ -931,6 +1177,7 @@
         br.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
       });
     }
+    initReglagesEnCours = false;
   }
 
   /* ------------------------------------------------------------------
@@ -1112,6 +1359,7 @@
   function choisirPalette(nom) {
     paletteChoisie = PALETTES.indexOf(nom) === -1 ? '' : nom;
     ecrireStockage(CLE_PALETTE, paletteChoisie || null);   // null = retour à la config/défaut
+    synchroniserIDB();
     appliquerPalette(paletteEffective());
     marquerPaletteCourante();
   }
@@ -1157,6 +1405,7 @@
 
   function sauvegarderPerso() {
     var liste = tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; });
+    synchroniserIDB();
     return ecrireStockage(CLE_PERSO, JSON.stringify(liste));
   }
 
@@ -1613,6 +1862,7 @@
             afficherTuiles();
             notes.push('Boutons de la personne restaurés : ' + tuilesPerso.length + '.');
           }
+          synchroniserIDB();
         }
         rendrePanneauTech();
         afficherMessagesTech(['Configuration importée. Vérifiez puis cliquez sur « Enregistrer et appliquer ».'].concat(notes), 'confirmation');
@@ -1853,6 +2103,7 @@
     btnEffacerPrenom.addEventListener('click', function () {
       ecrireStockage(CLE_PRENOM, null);
       ecrireStockage(CLE_PRENOM_PLUSTARD, null);
+      synchroniserIDB();
       prenomChoisi = '';
       afficherEntete();
       afficherMessagesTech(['Prénom choisi effacé : « Bonjour » seul s\'affiche, ou le prénom de la config.'], 'confirmation');
@@ -1921,6 +2172,7 @@
       ecrireStockage(CLE_PERSO, null);
       paletteChoisie = '';
       tuilesPerso = [];
+      synchroniserIDB();
       appliquerPalette(paletteEffective());
       afficherTuiles();
       afficherMessagesTech(['Personnalisation effacée : couleurs d\'origine et boutons ajoutés retirés.'], 'confirmation');
@@ -1928,6 +2180,61 @@
     });
     btnEffacerPerso.disabled = !paletteChoisie && !tuilesPerso.length;
     p.appendChild(el('div', { 'class': 'barre' }, [btnEffacerPerso]));
+
+    // Lien personnel : restaure prénom + couleurs + boutons via le fragment
+    // d'URL (#p=…), jamais envoyé au serveur. À définir en page d'accueil.
+    p.appendChild(el('h3', { text: 'Lien personnel' }));
+    p.appendChild(el('p', { 'class': 'discret', text: 'Ce lien contient son prénom et ses boutons : rangez-le dans son dossier client, et ne le postez nulle part en public.' }));
+    var casePrenomLien = el('input', { id: 'tech-lien-prenom', type: 'checkbox' });
+    casePrenomLien.checked = true;
+    var champLien = el('input', { id: 'tech-lien-perso', type: 'text', readonly: 'readonly', 'aria-label': 'Lien personnel généré' });
+    var btnGenerer = el('button', { type: 'button', 'class': 'bouton', text: 'Générer le lien personnel de cette personne' });
+    var btnCopierLien = el('button', { type: 'button', 'class': 'bouton', text: 'Copier', hidden: true });
+    btnGenerer.addEventListener('click', function () {
+      champLien.value = genererLienPersonnel(casePrenomLien.checked);
+      btnCopierLien.hidden = false;
+      afficherMessagesTech(['Lien généré : définissez-le comme page d\'accueil et favori sur l\'ordinateur de la personne.'], 'confirmation');
+    });
+    btnCopierLien.addEventListener('click', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(champLien.value).then(function () {
+          afficherMessagesTech(['Lien copié.'], 'confirmation');
+        }).catch(function () { champLien.select(); });
+      } else { champLien.select(); }
+    });
+    p.appendChild(el('div', { 'class': 'champs' }, [
+      el('label', { 'for': 'tech-lien-prenom', 'class': 'ligne' }, [casePrenomLien, 'Inclure le prénom'])]));
+    p.appendChild(el('div', { 'class': 'lien-personnel' }, [btnGenerer, champLien, btnCopierLien]));
+
+    // Diagnostic du stockage : état réel des deux moteurs de mémorisation
+    p.appendChild(el('h3', { text: 'Diagnostic du stockage' }));
+    var dl = el('dl', { 'class': 'diag-stockage' });
+    function ligneDiag(nom, valeur) {
+      dl.appendChild(el('dt', { text: nom }));
+      return dl.appendChild(el('dd', { text: valeur }));
+    }
+    ligneDiag('localStorage', stockageOK ? 'disponible (écriture, lecture, suppression testées)' : 'indisponible ou bloqué');
+    ligneDiag('IndexedDB', idbDisponible ? 'disponible' : 'indisponible');
+    ligneDiag('Mode d\'affichage', (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone ? 'installé (standalone)' : 'onglet du navigateur');
+    ligneDiag('Origine', location.origin === 'null' ? 'fichier local (file://)' : location.origin);
+    ligneDiag('Lien personnel', lienPersonnelVu ? 'un lien #p= était présent au chargement' : 'aucun lien #p= au chargement');
+    var ddPersist = ligneDiag('Mémorisation garantie', 'vérification…');
+    var ddQuota = ligneDiag('Espace utilisé', 'vérification…');
+    try {
+      if (navigator.storage && navigator.storage.persisted) {
+        navigator.storage.persisted().then(function (oui) {
+          ddPersist.textContent = oui ? 'oui (le navigateur ne l\'efface pas tout seul)' : 'non (le navigateur peut l\'effacer)';
+        }).catch(function () { ddPersist.textContent = 'inconnu'; });
+      } else { ddPersist.textContent = 'non vérifiable sur ce navigateur'; }
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(function (e) {
+          var util = Math.round((e.usage || 0) / 1024);
+          var quota = e.quota ? Math.round(e.quota / (1024 * 1024)) : 0;
+          ddQuota.textContent = quota ? util + ' Ko utilisés sur ' + quota + ' Mo' : util + ' Ko utilisés';
+        }).catch(function () { ddQuota.textContent = 'inconnu'; });
+      } else { ddQuota.textContent = 'non vérifiable sur ce navigateur'; }
+    } catch (e) { /* silencieux */ }
+    p.appendChild(dl);
 
     // Aide à distance
     p.appendChild(el('h3', { text: 'Aide à distance' }));
@@ -2332,38 +2639,47 @@
      ------------------------------------------------------------------ */
 
   function demarrer() {
-    initReglages();
-    majHorloge();
-    setInterval(majHorloge, 1000);
-    chargerPrenomChoisi();
-    chargerPerso();
-    initAide();
-    initBizarre();
-    initInstall();
-    initRetour();
-    initPrenom();
-    initPalette();
-    chargerConfig().then(function (c) {
-      config = c;
-      appliquerPalette(paletteEffective());   // la palette de la config s'applique si la personne n'a rien choisi
-      afficherEntete();
-      afficherTuiles();
-      // Ajout de cases par la personne : ni lien ni dialog ne sont construits quand la config dit « non »
-      if (config.ajoutParPersonne === 'non') {
-        var dAjout = $('dialog-ajout'), dRetrait = $('dialog-retrait');
-        if (dAjout) { dAjout.remove(); }
-        if (dRetrait) { dRetrait.remove(); }
-      } else { initAjout(); initRetrait(); }
-      // « Partager vers Mon Accueil » (share_target) : pré-remplit le vérificateur
-      traiterPartage();
-      // Premier lancement : demander le prénom seulement si ni choisi ni configuré,
-      // et pas déjà repoussé à « plus tard » — et sans recouvrir le vérificateur
-      if (!document.querySelector('dialog[open]')
-        && !prenomEffectif() && lireStockage(CLE_PRENOM_PLUSTARD) !== '1') { ouvrirPrenom(); }
-      // modeTechnicien : false (démo publique) = aucun geste, aucun code du panneau construit
-      if (config.modeTechnicien !== false) { initAppuiLong(); initPin(); }
+    // Test + restauration croisée localStorage ⇄ IndexedDB avant le premier affichage
+    preparerStockage().then(function () {
+      initReglages();
+      majHorloge();
+      setInterval(majHorloge, 1000);
+      chargerPrenomChoisi();
+      chargerPerso();
+      if (resemerIDB) { synchroniserIDB(); }   // le miroir IndexedDB était vide
+      initAide();
+      initBizarre();
+      initInstall();
+      initRetour();
+      initPrenom();
+      initPalette();
+      // navigator.storage.persist() après une action de la personne (1er clic sur une tuile)
+      $('tuiles').addEventListener('click', demanderPersistance);
+      chargerConfig().then(function (c) {
+        config = c;
+        // Lien personnel « #p= » : hydrate le stockage vide (ou force=1), avant tout affichage
+        if (traiterLienPersonnel()) { relireApresHydratation(); }
+        remplirLienTelephone($('appeler-stockage'));
+        appliquerPalette(paletteEffective());   // la palette de la config s'applique si la personne n'a rien choisi
+        afficherEntete();
+        afficherTuiles();
+        // Ajout de cases par la personne : ni lien ni dialog ne sont construits quand la config dit « non »
+        if (config.ajoutParPersonne === 'non') {
+          var dAjout = $('dialog-ajout'), dRetrait = $('dialog-retrait');
+          if (dAjout) { dAjout.remove(); }
+          if (dRetrait) { dRetrait.remove(); }
+        } else { initAjout(); initRetrait(); }
+        // « Partager vers Mon Accueil » (share_target) : pré-remplit le vérificateur
+        traiterPartage();
+        // Premier lancement : demander le prénom seulement si ni choisi ni configuré,
+        // et pas déjà repoussé à « plus tard » — et sans recouvrir le vérificateur
+        if (!document.querySelector('dialog[open]')
+          && !prenomEffectif() && lireStockage(CLE_PRENOM_PLUSTARD) !== '1') { ouvrirPrenom(); }
+        // modeTechnicien : false (démo publique) = aucun geste, aucun code du panneau construit
+        if (config.modeTechnicien !== false) { initAppuiLong(); initPin(); }
+      });
+      initServiceWorker();
     });
-    initServiceWorker();
   }
 
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', demarrer); }

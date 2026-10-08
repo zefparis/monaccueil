@@ -891,6 +891,30 @@ html.contraste-eleve .palette-nom { color: #ffffff; }
   padding-bottom: 0.15rem;
 }
 
+/* Avertissement « réglages non gardés » : visible et sobre */
+.bandeau-stockage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+  padding: 0.8rem 1rem;
+  border: 0.2rem solid var(--aide);
+  border-radius: 0.8rem;
+  background: var(--carte);
+}
+.bandeau-stockage p { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.bandeau-stockage .bouton-aide { position: static; min-height: 3rem; }
+html.contraste-eleve .bandeau-stockage { border-color: #ffff00; }
+
+/* Diagnostic du stockage (mode technicien) */
+.diag-stockage { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.8rem; margin: 0.3rem 0 0.8rem; }
+.diag-stockage dt { font-weight: 700; }
+.diag-stockage dd { margin: 0; }
+.lien-personnel { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.4rem 0; }
+.lien-personnel input { flex: 1 1 20rem; font-size: 0.95rem; }
+
 /* Grosses vignettes d'icônes (étape « Autre site ») */
 .liste-icones {
   display: flex;

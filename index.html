@@ -61,6 +61,13 @@
   <!-- Message de retour après ouverture d'un site : expliqué à voix haute à l'écran -->
   <p id="retour-accueil" class="retour-accueil" role="status" hidden></p>
 
+  <!-- Avertissement si les réglages ne peuvent pas être gardés sur cet
+       ordinateur : sobre, en gros caractères, avec le bouton Appeler -->
+  <div id="bandeau-stockage" class="bandeau-stockage" role="status" hidden>
+    <p>Vos réglages n'ont pas pu être gardés sur cet ordinateur. Appelez-moi, je règle ça en 2 minutes.</p>
+    <a id="appeler-stockage" class="bouton bouton-aide" href="#">Appeler</a>
+  </div>
+
   <main id="contenu">
     <!-- Les tuiles sont générées par app.js, regroupées en familles si la config définit des groupes -->
     <div id="tuiles" aria-label="Mes services en ligne"></div>

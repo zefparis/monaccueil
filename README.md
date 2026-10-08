@@ -244,6 +244,17 @@ interventions** (§ 4 bis).
 - **Importer une configuration** : charge un `config.json` (ou `config.js`).
 - **Revenir au fichier d'origine** : oublie les modifications locales et relit les
   fichiers du dossier.
+- **Lien personnel** : « Générer le lien personnel de cette personne » produit un
+  lien `…/index.html#p=…` qui contient (encodés, sans serveur) le prénom, la
+  palette, les boutons ajoutés et les réglages d'affichage. Option « Inclure le
+  prénom » cochée par défaut. Ce lien est la **procédure de récupération** si le
+  navigateur efface ses données : définissez-le comme page d'accueil et favori.
+  Il ne restaure rien si le stockage contient déjà des choix — sauf avec
+  `&force=1` ajouté par vos soins. Attention : il contient le prénom et les
+  boutons de la personne — dossier client uniquement, jamais en public.
+- **Diagnostic du stockage** : état réel de `localStorage` (écriture, lecture,
+  suppression testées), d'`IndexedDB`, du mode standalone/onglet, de l'origine,
+  du résultat de `navigator.storage.persisted()` et du quota utilisé.
 - **Quitter le mode technicien** (bouton en haut et en bas).
 
 ### 4 bis. Onglet « Journal des interventions »
@@ -532,6 +543,31 @@ version hébergée, et inversement. Avant de basculer un poste de l'un à l'autr
 1. Exportez la configuration (mode technicien → onglet Configuration →
    **Exporter**), gardez les deux fichiers.
 2. Exportez le journal (onglet Journal → **Exporter le journal**).
+
+#### Pourquoi le prénom peut disparaître — et ce qui est en place
+
+Le stockage navigateur peut être vidé malgré nous : option « effacer les données
+à la fermeture », nettoyeurs type CCleaner, navigation privée/InPrivate, et sur
+iPhone/iPad une purge automatique après 7 jours sans visite. Trois protections
+locales (aucune donnée ne quitte la machine) :
+
+- **Double écriture** : prénom, palette, boutons ajoutés et réglages sont écrits
+  dans `localStorage` **et** dans `IndexedDB` (base `monaccueil`, enregistrement
+  unique versionné). Au chargement, la source encore pleine re-sème l'autre —
+  chaque donnée relue repasse par la validation stricte.
+- **`navigator.storage.persist()`** est demandé après la première action de la
+  personne (clic sur une tuile, prénom validé) : si le navigateur l'accepte, il
+  n'efface plus le stockage tout seul. Le bloc « Diagnostic du stockage » du
+  mode technicien indique si la demande a été acceptée.
+- **Lien personnel `#p=`** (voir § 4) : le plan de secours. Mettez-le en page
+  d'accueil *et* en favori ; si tout est effacé, son ouverture réhydrate la
+  personnalisation. Rien n'est écrasé quand des choix existent déjà (sauf
+  `&force=1` ajouté par le technicien).
+
+Si même l'écriture est impossible (navigation privée, stockage bloqué), un
+bandeau sobre s'affiche : « Vos réglages n'ont pas pu être gardés sur cet
+ordinateur. Appelez-moi, je règle ça en 2 minutes. » avec le bouton Appeler.
+Vérifiez alors le réglage « effacer à la fermeture » du navigateur.
 
 ### ⚠️ Le mode technicien en version hébergée
 

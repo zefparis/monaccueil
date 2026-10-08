@@ -52,6 +52,35 @@ Cochez chaque ligne. Durée : environ 15 minutes.
       lecture seule ; « Effacer la personnalisation » remet tout à zéro ;
       l'export contient une section « personnalisation » séparée de « tuiles ».
 
+## A quater. Persistance — le vrai test, sur un vrai PC
+
+Le bug historique : le prénom disparaissait après extinction. À vérifier chez
+chaque client, sur sa machine et son navigateur :
+
+- [ ] Saisir le prénom, choisir une couleur, ajouter un bouton du catalogue.
+      Fermer le navigateur, **éteindre le PC**, rallumer : « Bonjour [prénom] »,
+      couleurs et bouton sont toujours là.
+- [ ] Refaire le même test avec le réglage navigateur « effacer les données à
+      la fermeture » **activé** puis **désactivé**. S'il est activé : soit le
+      désactiver, soit définir le lien personnel (ci-dessous) comme page
+      d'accueil — il re-sème la personnalisation à l'ouverture.
+- [ ] Mode technicien → « Diagnostic du stockage » : `localStorage` et
+      `IndexedDB` « disponibles », mode d'affichage correct, quota lisible.
+      « Mémorisation garantie » devrait dire « oui » après le premier clic sur
+      une tuile (demande `storage.persist()`).
+- [ ] « Générer le lien personnel » : le lien s'affiche, « Copier » fonctionne.
+      Dans un onglet **InPrivate** (ou après suppression des données du site),
+      ouvrir ce lien : prénom, couleurs, boutons reviennent ; l'adresse est
+      nettoyée (plus de `#p=` visible).
+- [ ] Un lien bidouillé (`#p=xyz`, adresse `javascript:`, prénom avec balise)
+      n'ajoute rien et ne plante pas la page.
+- [ ] Si le stockage est bloqué (navigateur en mode « tout effacer » extrême) :
+      bandeau « Vos réglages n'ont pas pu être gardés… Appelez-moi » + bouton
+      Appeler, la page fonctionne quand même.
+- [ ] iPhone : tester l'installation « Sur l'écran d'accueil », éteindre et
+      rallumer, vérifier le prénom. (iOS peut purger le stockage d'un site non
+      visité pendant 7 jours — l'icône sur l'écran d'accueil protège.)
+
 ## B. Lisibilité
 
 - [ ] Assis à sa place habituelle, le client lit **tous** les libellés sans effort.
