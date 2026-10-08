@@ -28,6 +28,7 @@ BASE = 'http://127.0.0.1:%d/' % PORT
 ETAPES = [
     ('node-verification', ['node', 'outils/test-verification.js']),
     ('node-palettes', ['node', 'outils/test-palettes.js']),
+    ('node-protection', ['node', 'outils/test-protection.js']),
     ('deploiement', [sys.executable, 'tests/suites/test_deploiement.py']),
     ('smoke', [sys.executable, 'tests/suites/test_smoke.py']),
     ('prenom', [sys.executable, 'tests/suites/test_prenom.py']),
@@ -39,6 +40,7 @@ ETAPES = [
     ('journal', [sys.executable, 'tests/suites/test_journal.py']),
     ('verification', [sys.executable, 'tests/suites/test_verification.py']),
     ('technicien', [sys.executable, 'tests/suites/test_technicien.py']),
+    ('protection', [sys.executable, 'tests/suites/test_protection.py']),
     ('accessibilite', [sys.executable, 'tests/suites/test_accessibilite.py']),
 ]
 

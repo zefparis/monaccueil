@@ -24,6 +24,7 @@ voit des boutons et un gros bouton rouge « J'ai besoin d'aide ».
 | `style.css` | Styles : 3 tailles de texte, contraste élevé, focus visible |
 | `app.js` | Logique : rendu des tuiles, aide, réglages, mode technicien |
 | `verification.js` | Analyse locale d'une adresse collée (tuile « Un message me paraît bizarre ») |
+| `protection-telephone.js` | Contenu de la tuile « Protéger mon téléphone » : marques, chemins de réglages, conseils — **modifiable sans toucher à `app.js`** |
 | `config.json` | **La configuration** (prénom, technicien, tuiles, PIN, domaines, arnaques) |
 | `config.js` | Copie de `config.json` lisible en `file://` (fallback) |
 | `icones.js` | Icônes SVG inline (générées depuis `icons/`) |
@@ -191,6 +192,12 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   `titre` (80 caractères max) et un `texte` (2 phrases, 300 caractères max).
 - `aideDistance` : `{ "actif": true, "outil": "quickassist" | "rustdesk", "idRustdesk": "" }`.
   Voir § 5. Si `actif` est `false`, la tuile « Aide à distance » n'apparaît pas.
+- `protectionTelephone` : `true` par défaut (absent = actif). `false` masque la
+  tuile « Protéger mon téléphone » (§ 6 bis). Case présente dans le panneau
+  technicien ; les étapes cochées par la personne (`localStorage`, clé
+  `monaccueil.protection`) sont lisibles en lecture seule dans le panneau,
+  incluses dans le lien personnel `#p=` et la section `personnalisation` de
+  l'export (section séparée, revalidée à l'import).
 - `statistiques` : section ajoutée par l'export (§ 6), ignorée à l'import.
 
 Si `raccourcisseurs` ou `arnaques` manquent (configuration d'un ancien client), les
@@ -462,6 +469,44 @@ listes de `config.json`. À relancer après toute modification de `verification.
 
 ---
 
+## 6 bis. Tuile « Protéger mon téléphone »
+
+Tuile fixe du groupe « Aide et sécurité » (mobile et PC). Elle n'ouvre aucun site :
+un clic affiche un dialog en 3 écrans, utilisable au clavier.
+
+1. **« Quel téléphone avez-vous ? »** : grosses vignettes iPhone, Samsung,
+   Xiaomi / Redmi / POCO, Pixel ou autre Android, et « Je ne sais pas »
+   (« Appelez-moi, je regarde avec vous » + lien `tel:`). Sur mobile, une
+   pré-sélection **prudente par capacités** peut cocher iPhone (jamais par
+   user-agent seul, toujours modifiable).
+2. **Les réglages de la marque**, un par écran : phrase d'action courte +
+   chemin des menus en gras, ligne « Dernière vérification : [date] », case
+   « C'est fait » mémorisée dans `localStorage` (`try/catch`, aucune donnée
+   sensible).
+3. **Conseils communs** : enregistrer les contacts importants avant de silencer
+   les inconnus, vérifier la liste des appels filtrés une fois par semaine,
+   rappel « ne donnez jamais un code reçu par SMS », signalement **33700**
+   (transférer le SMS frauduleux ; pour un appel, SMS « spam vocal » suivi du
+   numéro — ce n'est pas un blocage immédiat). Aucun prix, aucune application
+   payante citée.
+
+**Contenu** : tout vit dans `protection-telephone.js` (un objet par marque :
+`nom`, `verifie` = date de vérification, `etapes` = id + action + chemin de
+menus + note facultative). Les intitulés français exacts sont à corriger après
+vérification sur de vrais téléphones — modifiables sans toucher à `app.js`.
+
+**État mémorisé** : clé `monaccueil.protection` = `{ "m": "<marque>",
+"f": ["<étapes cochées>"] }`, scopée à la marque. Restaurée depuis le lien
+personnel `#p=` et la section `personnalisation` de l'export, après revalidation
+(marque connue, ids existants, entrées invalides filtrées). Lisible en lecture
+seule dans le panneau technicien ; `protectionTelephone: false` masque la tuile.
+
+**Test** : `node outils/test-protection.js` vérifie que chaque marque a une date
+de vérification et au moins un réglage, que les chemins ont ≥ 2 menus, qu'il n'y
+a ni HTML ni prix. Relancé par `npm run verif`.
+
+---
+
 ## 7. Dupliquer pour un nouveau client
 
 1. Copiez le dossier `MonAccueil` d'origine (celui du dépôt, pas celui d'un client).
@@ -636,6 +681,7 @@ contrôle échoue** — bloque avant commit.
 |---|---|
 | `node-verification` | 70 cas unitaires du vérificateur d'adresses |
 | `node-palettes` | 34 combinaisons de contraste des palettes |
+| `node-protection` | 56 contrôles du contenu `protection-telephone.js` (date de vérif, réglages, chemins ≥ 2 menus, ni HTML ni prix) |
 | `deploiement` | garde-fou : `.vercelignore`, inventaire déployé = fichiers référencés, aucun orphelin ni fichier de test |
 | `smoke` | en-têtes de sécurité, chargement bureau + mobile, aucune erreur console |
 | `prenom` | premier lancement, validation stricte, « Plus tard », priorité choix > config |
@@ -647,6 +693,7 @@ contrôle échoue** — bloque avant commit.
 | `journal` | interventions, résumé, export/import CSV (BOM, neutralisation des formules, doublons) |
 | `verification` | verdicts vert/rouge/vide, raisons, statistiques, 68/68 catalogue vert |
 | `technicien` | appui long, PIN (refus, ralentissement mesuré), sauvegarde, quitter, `modeTechnicien:false` |
+| `protection` | tuile « Protéger mon téléphone » : 3 écrans, cases mémorisées, pré-sélection iOS, lien `#p=`, `protectionTelephone:false`, liste technicien |
 | `accessibilite` | axe-core sur tous les écrans et dialogs (normal, contraste, taille max, zoom 200 %, mobile), piège de focus, Échap, retour de focus |
 
 Chaque suite peut aussi se lancer seule : `python3 tests/suites/test_mobile.py`

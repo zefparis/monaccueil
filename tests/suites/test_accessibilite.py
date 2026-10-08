@@ -120,6 +120,22 @@ def run(S, b):
     pg.click('#btn-fermer-ajout')
     S.check('clavier ajout : focus rendu à la tuile', tab_cycle(pg) == 'lien-ajout')
 
+    # ---------- Dialog protection téléphone (3 écrans) ----------
+    pg.locator('.tuile-protec').click()
+    axe(pg, S, 'dialog protection (marques)')
+    focus_reste_dans(pg, '#dialog-protec', S, 'protection')
+    pg.locator('.marque-vignette:has-text("iPhone")').click()
+    axe(pg, S, 'dialog protection (étape)')
+    pg.check('#case-faite')
+    pg.click('button:has-text("Réglage suivant")')
+    pg.click('button:has-text("Réglage suivant")')
+    pg.click('button:has-text("Voir les conseils")')
+    axe(pg, S, 'dialog protection (conseils)')
+    pg.keyboard.press('Escape')
+    S.check('clavier protection : Échap ferme', pg.locator('#dialog-protec[open]').count() == 0)
+    S.check('clavier protection : focus rendu à la tuile',
+            pg.evaluate("() => document.activeElement.classList.contains('tuile-protec')"))
+
     # ---------- Dialog PIN ----------
     ouvrir_tech(pg)
     axe(pg, S, 'panneau technicien')

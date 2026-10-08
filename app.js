@@ -22,6 +22,7 @@
   ];
   // Outils d'aide à distance pris en charge (le senior initie et accepte toujours la connexion)
   var OUTILS_DISTANCE = ['quickassist', 'rustdesk'];
+  var COULEUR_PROTECTION = '#0f766e';
   var COULEUR_DISTANCE = '#a21caf';
   // Tuile fixe "Un message me paraît bizarre" (orange foncé, blanc dessus = 7:1)
   var COULEUR_BIZARRE = '#9a3412';
@@ -52,6 +53,7 @@
   // Compteur anonyme des ajouts refusés par le vérificateur (aucun contenu conservé)
   var CLE_STAT_REFUS = 'monaccueil.stat.ajouts-refuses';
   var CLE_INSTALL_IOS = 'monaccueil.install-ios.ferme';
+  var CLE_PROTECTION = 'monaccueil.protection';   // étapes « Protéger mon téléphone » cochées (JSON)
 
   // Prénom : lettres (accents compris), espaces, tiret, apostrophe ; commence par une lettre ; 30 max
   var REGEX_PRENOM = /^[\p{L}][\p{L} '\-]*$/u;
@@ -93,6 +95,8 @@
   // Personnalisation locale de la personne : couleurs choisies et cases ajoutées
   var paletteChoisie = '';
   var tuilesPerso = [];
+  // « Protéger mon téléphone » : marque choisie et étapes cochées {m, f:[]}
+  var protectionChoisie = { m: '', f: [] };
   var echecsPin = 0;   // ralentissement partagé après chaque mauvais code
 
   /* ------------------------------------------------------------------
@@ -212,6 +216,7 @@
       plustard: lireStockage(CLE_PRENOM_PLUSTARD) === '1' ? 1 : 0,
       palette: paletteChoisie || '',
       perso: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; }),
+      protection: copieProfonde(protectionChoisie),
       reglages: {
         taille: taille,
         contraste: document.documentElement.classList.contains('contraste-eleve') ? 1 : 0
@@ -270,6 +275,10 @@
         }
         if (lireStockage(CLE_PERSO) === null && Array.isArray(idb.perso)) {
           ecrireStockage(CLE_PERSO, JSON.stringify(normaliserPerso(idb.perso))); change = true;
+        }
+        if (lireStockage(CLE_PROTECTION) === null && idb.protection) {
+          var pr = normaliserProtectionEtat(idb.protection);
+          if (pr.m) { ecrireStockage(CLE_PROTECTION, JSON.stringify(pr)); change = true; }
         }
         if (idb.reglages && typeof idb.reglages === 'object') {
           var t = parseInt(idb.reglages.taille, 10);
@@ -347,6 +356,10 @@
       });
       sauvegarderPerso();
     }
+    if (obj.protection) {
+      var prt = normaliserProtectionEtat(obj.protection);
+      if (prt.m) { protectionChoisie = prt; sauvegarderProtection(); }
+    }
     if (obj.reglages && typeof obj.reglages === 'object') {
       var t = parseInt(obj.reglages.taille, 10);
       if (t >= 1 && t <= 3) { appliquerTaille(t); }
@@ -366,6 +379,7 @@
     paletteChoisie = lireStockage(CLE_PALETTE) || '';
     chargerPrenomChoisi();
     chargerPerso();
+    chargerProtection();
   }
 
   /** Lien personnel « #p= » : la base courante (sans query ni fragment)
@@ -574,6 +588,8 @@
       ouvertureMobile: OUVERTURES_MOBILE.indexOf(c.ouvertureMobile) !== -1 ? c.ouvertureMobile : 'onglet',
       // « Si je ne réponds pas » : gros liens tel: dans le dialog d'aide (max 8, schéma strict)
       numerosUrgence: listeNumeros(c.numerosUrgence),
+      // Tuile « Protéger mon téléphone » : affichée sauf si la config dit false
+      protectionTelephone: typeof c.protectionTelephone === 'boolean' ? c.protectionTelephone : true,
       // Lien d'appel vidéo facultatif : https + domaine de la liste officielle (comme toute tuile)
       lienVisio: (function () {
         var v = typeof c.lienVisio === 'string' ? c.lienVisio.trim() : '';
@@ -922,6 +938,17 @@
       bizarre.style.setProperty('--couleur', COULEUR_BIZARRE);
       bizarre.addEventListener('click', function () { ouvrirDialog($('dialog-bizarre')); $('champ-adresse').focus(); });
       items.push(el('li', null, [bizarre]));
+      // Tuile fixe "Protéger mon téléphone" : guidage hors ligne en 3 étapes,
+      // masquée si la config la désactive ou si le contenu est absent/invalide
+      if (config.protectionTelephone && protectionDisponible()) {
+        var protec = el('button', { type: 'button', 'class': 'tuile tuile-protec' }, [
+          creerIcone('telephone.svg', COULEUR_PROTECTION),
+          el('span', { 'class': 'tuile-label', text: 'Protéger mon téléphone' })
+        ]);
+        protec.style.setProperty('--couleur', COULEUR_PROTECTION);
+        protec.addEventListener('click', function () { ouvrirProtection(); });
+        items.push(el('li', null, [protec]));
+      }
       return items;
     }
 
@@ -1275,6 +1302,263 @@
     $('btn-install-fermer').addEventListener('click', function () {
       banniere.hidden = true;
       ecrireStockage(CLE_INSTALL, '1');
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     « Protéger mon téléphone » : guidage hors ligne en 3 étapes
+     (marque → réglages un par écran → conseils communs). Tout le texte
+     vit dans protection-telephone.js (window.MONACCUEIL_PROTECTION),
+     revalidé ici avec un schéma strict : aucun HTML, longueurs bornées.
+     Les cases « C'est fait » sont mémorisées en localStorage (rien de
+     sensible : juste une marque et des id d'étapes).
+     ------------------------------------------------------------------ */
+
+  var protectionContenu = null;   // contenu validé {aideInconnu, marques:[], conseils:[]}
+  var protecVue = 'marques';      // 'marques' | 'etapes' | 'conseils' | 'inconnu'
+  var protecIndex = 0;            // étape courante dans la marque choisie
+
+  /** Texte court autorisé dans le contenu (pas de HTML, longueur bornée). */
+  function texteContenu(v, max) {
+    return typeof v === 'string' && v.length > 0 && v.length <= max && v.indexOf('<') === -1 ? v : '';
+  }
+
+  /** Revalide window.MONACCUEIL_PROTECTION : entrées invalides ignorées. */
+  function normaliserProtectionContenu() {
+    if (protectionContenu) { return protectionContenu; }
+    var brut = window.MONACCUEIL_PROTECTION;
+    var sortie = { aideInconnu: '', marques: [], conseils: [] };
+    if (!brut || typeof brut !== 'object') { protectionContenu = sortie; return sortie; }
+    sortie.aideInconnu = texteContenu(brut.aideInconnu, 200)
+      || 'Appelez-moi, je regarde avec vous.';
+    if (Array.isArray(brut.marques)) {
+      brut.marques.forEach(function (m) {
+        if (!m || typeof m !== 'object') { return; }
+        var id = /^[a-z0-9-]{1,20}$/.test(m.id) ? m.id : '';
+        var nom = texteContenu(m.nom, 40);
+        var verification = texteContenu(m.verification, 40);
+        var etapes = [], ids = {};
+        if (Array.isArray(m.etapes)) {
+          m.etapes.slice(0, 12).forEach(function (e) {
+            if (!e || typeof e !== 'object') { return; }
+            var eid = /^[a-z0-9-]{1,30}$/.test(e.id) ? e.id : '';
+            var action = texteContenu(e.action, 300);
+            var chemin = [];
+            if (Array.isArray(e.chemin)) {
+              e.chemin.slice(0, 8).forEach(function (s) {
+                var seg = texteContenu(s, 50);
+                if (seg) { chemin.push(seg); }
+              });
+            }
+            var note = texteContenu(e.note, 300);
+            if (eid && action && chemin.length && !ids[eid]) {
+              ids[eid] = true;
+              etapes.push({ id: eid, action: action, chemin: chemin, note: note });
+            }
+          });
+        }
+        if (id && nom && verification && etapes.length) {
+          sortie.marques.push({
+            id: id, nom: nom, verification: verification,
+            note: texteContenu(m.note, 300), etapes: etapes
+          });
+        }
+      });
+    }
+    if (Array.isArray(brut.conseils)) {
+      brut.conseils.slice(0, 10).forEach(function (t) {
+        var c = texteContenu(t, 400);
+        if (c) { sortie.conseils.push(c); }
+      });
+    }
+    protectionContenu = sortie;
+    return sortie;
+  }
+
+  function protectionDisponible() {
+    return normaliserProtectionContenu().marques.length > 0;
+  }
+
+  function marqueParId(id) {
+    var trouve = null;
+    normaliserProtectionContenu().marques.forEach(function (m) { if (m.id === id) { trouve = m; } });
+    return trouve;
+  }
+
+  /** Schéma strict de l'état mémorisé {m, f} — même pour stockage, #p= et import. */
+  function normaliserProtectionEtat(obj) {
+    var vide = { m: '', f: [] };
+    if (!obj || typeof obj !== 'object' || typeof obj.m !== 'string') { return vide; }
+    var marque = marqueParId(obj.m);
+    if (!marque) { return vide; }
+    var vus = {};
+    var f = [];
+    if (Array.isArray(obj.f)) {
+      obj.f.forEach(function (eid) {
+        var ok = marque.etapes.some(function (e) { return e.id === eid; });
+        if (ok && !vus[eid]) { vus[eid] = true; f.push(eid); }
+      });
+    }
+    return { m: marque.id, f: f };
+  }
+
+  function chargerProtection() {
+    protectionChoisie = { m: '', f: [] };
+    var brut = lireStockage(CLE_PROTECTION);
+    if (!brut) { return; }
+    try {
+      protectionChoisie = normaliserProtectionEtat(JSON.parse(brut));
+    } catch (e) { /* corrompu : repart de zéro */ }
+  }
+
+  function sauvegarderProtection() {
+    if (protectionChoisie.m || protectionChoisie.f.length) {
+      ecrireStockage(CLE_PROTECTION, JSON.stringify(protectionChoisie));
+    } else {
+      ecrireStockage(CLE_PROTECTION, null);
+    }
+    synchroniserIDB();
+  }
+
+  /** Pré-sélection prudente par capacités : navigator.standalone n'existe
+      que sur iOS (jamais de lecture du user-agent). Toujours modifiable. */
+  function preselectionMarque() {
+    if (protectionChoisie.m) { return protectionChoisie.m; }
+    if (estMobile() && typeof navigator.standalone !== 'undefined') { return 'iphone'; }
+    return '';
+  }
+
+  function protecAfficherRetour(visible) {
+    $('btn-protec-retour').hidden = !visible;
+  }
+
+  /** Rend une étape : phrase d'action, chemin des menus en gras, note, case. */
+  function rendreEtapeProtection(marque, index) {
+    var zone = $('protec-contenu');
+    vider(zone);
+    var e = marque.etapes[index];
+    zone.appendChild(el('p', { 'class': 'protec-verif discret', text: 'Dernière vérification : ' + marque.verification }));
+    zone.appendChild(el('p', { 'class': 'protec-compteur discret', text: 'Réglage ' + (index + 1) + ' sur ' + marque.etapes.length }));
+    zone.appendChild(el('p', { 'class': 'protec-action', text: e.action }));
+    var chemin = el('p', { 'class': 'chemin-menu' });
+    e.chemin.forEach(function (seg, i) {
+      if (i) { chemin.appendChild(el('span', { 'class': 'chemin-sep', 'aria-hidden': 'true', text: ' › ' })); }
+      chemin.appendChild(el('strong', { text: seg }));
+    });
+    zone.appendChild(chemin);
+    if (e.note) { zone.appendChild(el('p', { 'class': 'protec-note discret', text: e.note })); }
+    // Grosse case « C'est fait » : mémorisée en localStorage
+    var caseFaite = el('input', { id: 'case-faite', type: 'checkbox' });
+    caseFaite.checked = protectionChoisie.f.indexOf(e.id) !== -1;
+    caseFaite.addEventListener('change', function () {
+      if (caseFaite.checked) {
+        if (protectionChoisie.f.indexOf(e.id) === -1) { protectionChoisie.f.push(e.id); }
+      } else {
+        protectionChoisie.f = protectionChoisie.f.filter(function (x) { return x !== e.id; });
+      }
+      sauvegarderProtection();
+      demanderPersistance();
+    });
+    var label = el('label', { 'class': 'case-faite', 'for': 'case-faite' }, [caseFaite, 'C\'est fait']);
+    zone.appendChild(label);
+    if (marque.note) { zone.appendChild(el('p', { 'class': 'protec-note discret', text: marque.note })); }
+    var actions = el('div', { 'class': 'protec-nav' });
+    if (index > 0) {
+      var prec = el('button', { type: 'button', 'class': 'bouton bouton-discret', text: '← Réglage précédent' });
+      prec.addEventListener('click', function () { protecIndex--; rendreEtapeProtection(marque, protecIndex); });
+      actions.appendChild(prec);
+    }
+    var suivant = el('button', {
+      type: 'button', 'class': 'bouton bouton-principal',
+      text: index < marque.etapes.length - 1 ? 'Réglage suivant →' : 'Voir les conseils →'
+    });
+    suivant.addEventListener('click', function () {
+      if (index < marque.etapes.length - 1) { protecIndex++; rendreEtapeProtection(marque, protecIndex); }
+      else { protecVue = 'conseils'; protecAfficherRetour(true); rendreProtecConseils(); }
+    });
+    actions.appendChild(suivant);
+    zone.appendChild(actions);
+    caseFaite.focus();
+  }
+
+  /** Étape 1 : « Quel téléphone avez-vous ? » — grosses vignettes par marque. */
+  function rendreProtecMarques() {
+    var zone = $('protec-contenu');
+    vider(zone);
+    protecAfficherRetour(false);
+    zone.appendChild(el('p', { 'class': 'protec-question', text: 'Quel téléphone avez-vous ?' }));
+    var liste = el('div', { 'class': 'marque-vignettes' });
+    var preco = preselectionMarque();
+    normaliserProtectionContenu().marques.forEach(function (m) {
+      var b = el('button', {
+        type: 'button', 'class': 'marque-vignette' + (m.id === preco ? ' choisie' : ''),
+        'aria-pressed': m.id === preco ? 'true' : 'false'
+      }, [el('span', { text: m.nom })]);
+      b.addEventListener('click', function () {
+        if (protectionChoisie.m !== m.id) { protectionChoisie = { m: m.id, f: [] }; sauvegarderProtection(); }
+        protecVue = 'etapes';
+        protecIndex = 0;
+        protecAfficherRetour(true);
+        rendreEtapeProtection(m, 0);
+      });
+      liste.appendChild(b);
+    });
+    var inco = el('button', { type: 'button', 'class': 'marque-vignette marque-inconnu' },
+      [el('span', { text: 'Je ne sais pas' })]);
+    inco.addEventListener('click', function () {
+      protecVue = 'inconnu';
+      protecAfficherRetour(true);
+      var z = $('protec-contenu');
+      vider(z);
+      z.appendChild(el('p', { 'class': 'protec-action', text: normaliserProtectionContenu().aideInconnu }));
+      var lienAppel = el('a', { 'class': 'aide-telephone', href: '#' });
+      z.appendChild(lienAppel);
+      remplirLienTelephone(lienAppel);
+      $('btn-protec-retour').focus();
+    });
+    liste.appendChild(inco);
+    zone.appendChild(liste);
+    var premier = liste.querySelector('.marque-vignette');
+    if (premier) { premier.focus(); }
+  }
+
+  /** Étape 3 : conseils communs « avant de commencer / après ». */
+  function rendreProtecConseils() {
+    var zone = $('protec-contenu');
+    vider(zone);
+    zone.appendChild(el('p', { 'class': 'protec-question', text: 'Pour finir, quelques conseils' }));
+    var ul = el('ul', { 'class': 'protec-conseils' });
+    normaliserProtectionContenu().conseils.forEach(function (t) { ul.appendChild(el('li', { text: t })); });
+    zone.appendChild(ul);
+    $('btn-fermer-protec').focus();
+  }
+
+  function ouvrirProtection() {
+    var d = $('dialog-protec');
+    protecVue = 'marques';
+    rendreProtecMarques();
+    ouvrirDialog(d);
+    var premier = d.querySelector('.marque-vignette');
+    if (premier) { premier.focus(); }
+  }
+
+  function initProtection() {
+    var d = $('dialog-protec');
+    $('btn-fermer-protec').addEventListener('click', function () {
+      fermerDialog(d);
+      var tuile = document.querySelector('.tuile-protec');
+      if (tuile) { tuile.focus(); }
+    });
+    $('btn-protec-retour').addEventListener('click', function () {
+      if (protecVue === 'etapes' || protecVue === 'conseils' || protecVue === 'inconnu') {
+        protecVue = 'marques';
+        rendreProtecMarques();
+      }
+    });
+    // Échap (cancel natif) : le focus revient sur la tuile
+    d.addEventListener('close', function () {
+      var tuile = document.querySelector('.tuile-protec');
+      if (tuile && document.activeElement === document.body) { tuile.focus(); }
     });
   }
 
@@ -1703,6 +1987,7 @@
     brouillon.lienVisio = p.querySelector('[name="lien-visio"]').value.trim();
     brouillon.palette = p.querySelector('[name="palette-defaut"]').value;
     brouillon.ajoutParPersonne = p.querySelector('[name="ajout-personne"]').value;
+    brouillon.protectionTelephone = p.querySelector('[name="protection-tel"]').checked;
     brouillon.domainesOfficiels = lireListeTexte(p.querySelector('[name="domaines"]').value);
     brouillon.raccourcisseurs = lireListeTexte(p.querySelector('[name="raccourcisseurs"]').value);
     brouillon.numerosUrgence = lireNumerosTexte(p.querySelector('[name="numeros-urgence"]').value);
@@ -1829,7 +2114,8 @@
     // Section séparée, jamais mélangée à « tuiles » : restaurée dans localStorage à l'import
     exporte.personnalisation = {
       palette: paletteChoisie,
-      tuiles: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; })
+      tuiles: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; }),
+      protection: copieProfonde(protectionChoisie)
     };
     var json = JSON.stringify(exporte, null, 2) + '\n';
     telechargerFichier('config.json', json, 'application/json');
@@ -1843,7 +2129,8 @@
     var copie = copieProfonde(config);
     copie.personnalisation = {
       palette: paletteChoisie,
-      tuiles: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; })
+      tuiles: tuilesPerso.map(function (t) { return { label: t.label, url: t.url, icone: t.icone }; }),
+      protection: copieProfonde(protectionChoisie)
     };
     telechargerFichier('config.json', JSON.stringify(copie, null, 2) + '\n', 'application/json');
     afficherMessagesTech(['Sauvegarde téléchargée : rangez ce config.json dans le dossier MonAccueil du client.'], 'confirmation');
@@ -1884,6 +2171,14 @@
             sauvegarderPerso();
             afficherTuiles();
             notes.push('Boutons de la personne restaurés : ' + tuilesPerso.length + '.');
+          }
+          if (p2.protection) {
+            var prt = normaliserProtectionEtat(p2.protection);
+            if (prt.m) {
+              protectionChoisie = prt;
+              ecrireStockage(CLE_PROTECTION, JSON.stringify(prt));
+              notes.push('Réglages « Protéger mon téléphone » restaurés : ' + prt.f.length + ' coché(s).');
+            }
           }
           synchroniserIDB();
         }
@@ -2172,13 +2467,30 @@
       if (o[0] === brouillon.ajoutParPersonne) { opt.selected = true; }
       selAjout.appendChild(opt);
     });
+    var caseProtec = el('input', { id: 'tech-protec', name: 'protection-tel', type: 'checkbox' });
+    caseProtec.checked = brouillon.protectionTelephone !== false;
     p.appendChild(el('div', { 'class': 'champs' }, [
       el('label', { 'for': 'tech-palette' }, ['Couleurs proposées par défaut', selPalette]),
-      el('label', { 'for': 'tech-ajout' }, ['La personne peut ajouter des boutons', selAjout])]));
+      el('label', { 'for': 'tech-ajout' }, ['La personne peut ajouter des boutons', selAjout]),
+      el('label', { 'for': 'tech-protec', 'class': 'ligne' }, [caseProtec, 'Afficher la tuile « Protéger mon téléphone »'])]));
 
     // Personnalisation locale de la personne (lecture seule) : couleurs et cases ajoutées
     p.appendChild(el('h2', { text: 'Personnalisation de la personne' }));
     var lignesPerso = [el('p', { 'class': 'discret', text: 'Couleurs choisies sur ce PC : ' + (paletteChoisie ? NOMS_PALETTES[paletteChoisie] : 'aucune (celles de la config)') + '.' })];
+    // Étapes « Protéger mon téléphone » cochées sur ce poste (lecture seule)
+    if (protectionChoisie.m) {
+      var mChoisie = marqueParId(protectionChoisie.m);
+      if (mChoisie) {
+        var libelles = mChoisie.etapes.map(function (e) {
+          return (protectionChoisie.f.indexOf(e.id) !== -1 ? '✓ ' : '· ') + e.action;
+        });
+        var ulProtec = el('ul');
+        libelles.forEach(function (t) { ulProtec.appendChild(el('li', { text: t })); });
+        lignesPerso.push(el('p', { 'class': 'discret', text: 'Protéger mon téléphone (' + mChoisie.nom + ') : ' +
+          protectionChoisie.f.length + ' réglage(s) coché(s) sur ' + mChoisie.etapes.length + ' — détails ci-dessous.' }));
+        lignesPerso.push(ulProtec);
+      }
+    }
     if (tuilesPerso.length) {
       var ulPerso = el('ul');
       tuilesPerso.forEach(function (t) { ulPerso.appendChild(el('li', { text: t.label + ' — ' + t.url })); });
@@ -2695,6 +3007,8 @@
           if (dAjout) { dAjout.remove(); }
           if (dRetrait) { dRetrait.remove(); }
         } else { initAjout(); initRetrait(); }
+        chargerProtection();
+        initProtection();
         // « Partager vers Mon Accueil » (share_target) : pré-remplit le vérificateur
         traiterPartage();
         // Premier lancement : demander le prénom seulement si ni choisi ni configuré,

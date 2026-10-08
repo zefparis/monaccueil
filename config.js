@@ -11,6 +11,7 @@ window.MONACCUEIL_CONFIG = {
   "ouvertureSites": "fenetre",
   "ouvertureMobile": "onglet",
   "lienVisio": "",
+  "protectionTelephone": true,
   "numerosUrgence": [
     { "nom": "Info Escroqueries", "numero": "0 805 805 817", "detail": "« Mon message est-il une arnaque ? » — service public gratuit" },
     { "nom": "Urgences", "numero": "112", "detail": "numéro d'urgence européen, depuis n'importe quel téléphone" },

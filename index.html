@@ -276,6 +276,18 @@
     </div>
   </dialog>
 
+  <!-- « Protéger mon téléphone » : guidage en 3 étapes (marque → réglages
+       un par écran → conseils). Le contenu affiché vit dans
+       protection-telephone.js ; app.js ne fait que le rendre. -->
+  <dialog id="dialog-protec" class="dialog dialog-distance dialog-protec" aria-labelledby="protec-titre">
+    <h2 id="protec-titre">Protéger mon téléphone</h2>
+    <div id="protec-contenu"></div>
+    <div class="actions">
+      <button type="button" id="btn-protec-retour" class="bouton bouton-discret" hidden>← Retour</button>
+      <button type="button" id="btn-fermer-protec" class="bouton bouton-principal">Fermer</button>
+    </div>
+  </dialog>
+
   <!-- Panneau technicien (généré par app.js). role=main : il remplace tout
        l'écran quand il est visible — l'accueil est alors display:none. -->
   <section id="panneau-tech" class="panneau-tech" role="main" hidden aria-labelledby="tech-titre"></section>
@@ -284,6 +296,8 @@
   <script src="icones.js"></script>
   <!-- Catalogue de services proposés par « Ajouter un bouton » (modifiable par le technicien via la config) -->
   <script src="catalogue.js"></script>
+  <!-- Contenu « Protéger mon téléphone » : window.MONACCUEIL_PROTECTION -->
+  <script src="protection-telephone.js"></script>
   <!-- Configuration embarquée (fallback si config.json ne peut pas être lu, par ex. en file://) -->
   <script src="config.js"></script>
   <!-- Vérification locale d'une adresse (aucun lien ouvert, aucun envoi) ; testé par outils/test-verification.js -->

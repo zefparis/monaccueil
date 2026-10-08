@@ -943,6 +943,61 @@ html.contraste-eleve .bandeau-stockage { border-color: #ffff00; }
   border-radius: 0.7rem;
 }
 
+/* ---------- « Protéger mon téléphone » ---------- */
+.dialog-protec { max-width: 44rem; }
+.protec-question { font-size: 1.4rem; font-weight: 700; margin: 0.4rem 0 1rem; }
+.protec-action { font-size: 1.3rem; margin: 0.7rem 0; line-height: 1.5; }
+.protec-verif, .protec-compteur { margin: 0.2rem 0; }
+.protec-note { margin: 0.6rem 0; font-size: 1.05rem; line-height: 1.45; }
+.marque-vignettes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin: 0.5rem 0 1rem;
+}
+.marque-vignette {
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 1.1rem 1rem;
+  min-height: 4rem;
+  color: var(--texte);
+  background: var(--carte);
+  border: 0.15rem solid var(--bordure);
+  border-radius: var(--rayon);
+  cursor: pointer;
+}
+.marque-vignette:hover { border-color: var(--principal); }
+.marque-vignette.choisie { border-color: var(--principal); background: var(--fond-doux); }
+.marque-vignette:focus-visible { outline: 0.2rem solid var(--principal); outline-offset: 0.15rem; }
+.chemin-menu { font-size: 1.3rem; margin: 0.9rem 0; line-height: 2; }
+.chemin-menu strong { background: var(--fond-doux); border-radius: 0.45rem; padding: 0.25rem 0.55rem; }
+.chemin-sep { color: var(--texte-secondaire); }
+.case-faite {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 1.2rem 0;
+  padding: 0.9rem 1.1rem;
+  color: var(--texte);
+  background: var(--carte);
+  border: 0.15rem solid var(--bordure);
+  border-radius: var(--rayon);
+  cursor: pointer;
+}
+.case-faite input { width: 1.7rem; height: 1.7rem; flex-shrink: 0; }
+.protec-nav { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1rem; }
+.protec-conseils { font-size: 1.2rem; line-height: 1.55; padding-left: 1.5rem; margin: 0.5rem 0; }
+.protec-conseils li { margin: 0.7rem 0; }
+html.contraste-eleve .marque-vignette { border-color: #ffffff; color: #ffffff; background: transparent; }
+html.contraste-eleve .marque-vignette.choisie { border-color: #ffff00; color: #ffff00; }
+html.contraste-eleve .chemin-menu strong { background: transparent; border: 1px solid #ffff00; color: #ffff00; }
+html.contraste-eleve .case-faite { border-color: #ffffff; color: #ffffff; background: transparent; }
+html.contraste-eleve .protec-note { color: #ffffff; }
+
+
 /* Dialog « Retirer mes boutons » */
 .liste-retrait { list-style: none; margin: 0.6rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .liste-retrait li {

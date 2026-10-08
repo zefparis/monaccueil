@@ -190,6 +190,26 @@ chaque client, sur sa machine et son navigateur :
       le texte de retour correspond à l'écran (croix sur PC, flèche retour sur
       téléphone).
 
+## F quater. Tuile « Protéger mon téléphone »
+
+- [ ] La tuile figure dans « Aide et sécurité » (PC et téléphone). Un clic
+      ouvre « Quel téléphone avez-vous ? » avec 5 grosses vignettes (iPhone,
+      Samsung, Xiaomi / Redmi / POCO, Pixel ou autre Android, Je ne sais pas).
+- [ ] « Je ne sais pas » affiche « Appelez-moi, je regarde avec vous » avec le
+      lien `tel:` cliquable.
+- [ ] Chaque écran de réglage : une phrase d'action courte, le chemin des menus
+      en gras, « Dernière vérification : [date] » en bas, la case « C'est fait »
+      ; naviguer précédent/suivant ne perd pas les cases.
+- [ ] Recharger la page : la marque et les cases cochées sont toujours là.
+- [ ] Le dernier écran liste les conseils (contacts à enregistrer avant,
+      regarder les appels filtrés chaque semaine, jamais de code par SMS,
+      33700).
+- [ ] Panneau technicien : la case « Afficher la tuile » existe ; les étapes
+      cochées sont lisibles en lecture seule.
+- [ ] **Sur de vrais téléphones** (voir L6) : vérifier que les chemins de menus
+      correspondent aux vrais intitulés français — les textes de
+      `protection-telephone.js` seront corrigés après ces vérifications.
+
 ## G. Clavier (si le client utilise peu la souris)
 
 - [ ] Tab passe de bouton en bouton, le contour de focus est bien visible.
@@ -338,3 +358,25 @@ chaque client, sur sa machine et son navigateur :
       contextuel ni sélection de texte ; le champ PIN n'est pas masqué par le
       clavier virtuel ; le panneau reste utilisable au tactile.
 - [ ] `modeTechnicien: false` : l'appui long ne fait rien.
+
+### L6. « Protéger mon téléphone » sur de vrais appareils
+
+À faire une fois, sur un **vrai iPhone**, un **vrai Samsung**, un **vrai
+Xiaomi / Redmi / POCO** et un **Pixel ou Android avec l'appli Téléphone de
+Google** — les intitulés de menus changent selon les versions :
+
+- [ ] Sur iPhone : la vignette iPhone est pré-cochée (capacités, toujours
+      modifiable). Suivre le chemin affiché jusqu'au réglage : les intitulés
+      français réels correspondent-ils ? Sinon corriger `protection-telephone.js`.
+- [ ] iPhone avec iOS 25 ou plus ancien : l'étape « Silence des numéros
+      inconnus » s'applique ; le filtre anti-spam dépend bien de l'opérateur.
+- [ ] Sur Samsung : « Caller ID and spam protection » existe au chemin affiché ;
+      noter si un réglage séparé de détection d'arnaques existe (One UI 8.5+).
+      Vérifier que les appels WhatsApp ne sont PAS couverts (message affiché).
+- [ ] Sur Xiaomi / Redmi / POCO : « Identification de l'appelant et spam »
+      existe au chemin affiché.
+- [ ] Sur Pixel / Android Google : « Numéro de l'appelant et spam » existe ;
+      en France, le filtrage automatique n'est PAS promis (manuel seulement).
+- [ ] « Je ne sais pas » propose bien l'appel ; les cases « C'est fait » restent
+      cochées après redémarrage du téléphone.
+- [ ] 33700 : vérifier auprès du client qu'il sait transférer un SMS.

@@ -5,7 +5,7 @@
    officiels s'ouvrent dans un nouvel onglet, hors de la portée du SW).
    Incrémentez VERSION à chaque mise à jour des fichiers.
    ===================================================================== */
-var VERSION = 'monaccueil-v14';
+var VERSION = 'monaccueil-v15';
 var FICHIERS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ var FICHIERS = [
   './verification.js',
   './icones.js',
   './catalogue.js',
+  './protection-telephone.js',
   './config.js',
   './config.json',
   './manifest.webmanifest',
