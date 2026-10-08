@@ -39,6 +39,7 @@ ETAPES = [
     ('journal', [sys.executable, 'tests/suites/test_journal.py']),
     ('verification', [sys.executable, 'tests/suites/test_verification.py']),
     ('technicien', [sys.executable, 'tests/suites/test_technicien.py']),
+    ('accessibilite', [sys.executable, 'tests/suites/test_accessibilite.py']),
 ]
 
 MOTIF_BILAN = re.compile(r'(\d+)\s+contr[oô]les? OK,\s+(\d+)\s+[ée]chec')

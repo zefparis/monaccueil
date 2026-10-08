@@ -5,7 +5,7 @@
    officiels s'ouvrent dans un nouvel onglet, hors de la portée du SW).
    Incrémentez VERSION à chaque mise à jour des fichiers.
    ===================================================================== */
-var VERSION = 'monaccueil-v13';
+var VERSION = 'monaccueil-v14';
 var FICHIERS = [
   './',
   './index.html',
@@ -50,6 +50,15 @@ self.addEventListener('fetch', function (ev) {
       caches.open(VERSION).then(function (c) { c.put(ev.request, copie); });
       return rep;
     }).catch(function () { return caches.match(ev.request); }));
+    return;
+  }
+
+  // Navigations (/, /index.html, share target ?url=…) : cache d'abord, réseau
+  // sinon ; hors ligne, repli sur la page d'accueil en cache.
+  if (ev.request.mode === 'navigate') {
+    ev.respondWith(caches.match(ev.request, { ignoreSearch: true }).then(function (rep) {
+      return rep || fetch(ev.request).catch(function () { return caches.match('./'); });
+    }));
     return;
   }
 

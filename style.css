@@ -564,9 +564,9 @@ html.contraste-eleve .num-urgence-detail { color: #ffffff; }
   background: var(--fond-doux);
   border-top: 0.3rem solid var(--principal);
 }
-.panneau-tech h2 { font-size: 1.6rem; margin: 0 0 0.5rem; }
-.panneau-tech h3 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
-.panneau-tech h4 { font-size: 1.05rem; margin: 1.2rem 0 0.4rem; }
+.panneau-tech h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+.panneau-tech h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+.panneau-tech h3 { font-size: 1.05rem; margin: 1.2rem 0 0.4rem; }
 .panneau-tech .bouton { font-size: 0.9rem; min-height: 2.4rem; }
 .panneau-tech .barre {
   display: flex;

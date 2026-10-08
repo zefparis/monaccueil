@@ -5,5 +5,8 @@
   "scripts": {
     "test": "python3 tests/run_all.py",
     "verif": "python3 tests/run_all.py"
+  },
+  "devDependencies": {
+    "axe-core": "4.10.2"
   }
 }

@@ -23,9 +23,30 @@ vercelignore = lire('.vercelignore')
 S.check('.vercelignore exclut tests/', re.search(r'(?m)^/?tests/?\*?$', vercelignore.strip()) is not None
         or 'tests/' in vercelignore)
 S.check('.vercelignore exclut les docs', 'docs/' in vercelignore or '*.md' in vercelignore)
+S.check('.vercelignore exclut node_modules', 'node_modules' in vercelignore)
+
+# ---------- Cohérence CSP : meta de index.html vs en-tête vercel.json ----------
+# (le meta ne peut pas contenir frame-ancestors : ignoré volontairement)
+html = lire('index.html')
+meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
+S.check('meta CSP présent dans index.html', meta is not None)
+vc = json.loads(lire('vercel.json'))
+csp_entete = ''
+for bloc in vc.get('headers', []):
+    for h in bloc.get('headers', []):
+        if h.get('key') == 'Content-Security-Policy':
+            csp_entete = h.get('value', '')
+S.check('vercel.json : CSP présent', bool(csp_entete))
+if meta and csp_entete:
+    meta_dirs = set(d.strip() for d in meta.group(1).split(';') if d.strip())
+    hdr_dirs = set(d.strip() for d in csp_entete.split(';') if d.strip())
+    # Le meta ne doit rien exiger d'absent de l'en-tête (frame-ancestors ne
+    # peut pas figurer dans un meta : il n'existe que côté en-tête).
+    S.check('CSP meta ⊆ CSP en-tête', meta_dirs <= hdr_dirs)
+    S.check("CSP : aucun 'unsafe-inline' / 'unsafe-eval' nulle part",
+            not any('unsafe' in d for d in meta_dirs | hdr_dirs))
 
 # ---------- Fichiers référencés par la page ----------
-html = lire('index.html')
 refs = set(re.findall(r'(?:src|href)="([^"#]+)"', html))
 refs = {r for r in refs if not r.startswith(('http', 'tel:', 'mailto:', 'data:'))}
 S.check('index.html référence app.js', 'app.js' in refs)

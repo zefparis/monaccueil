@@ -25,7 +25,8 @@ const MIME = {
   '.csv': 'text/csv; charset=utf-8'
 };
 
-// Même politique que vercel.json
+// Même politique que vercel.json (tenue à jour à la main : si vercel.json
+// change, ce bloc doit suivre — la suite smoke vérifie les en-têtes clés)
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; " +
   "connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; " +
   "form-action 'none'; frame-ancestors 'none'; object-src 'none'";
@@ -35,7 +36,10 @@ const SECURITE = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'no-referrer',
-  'Permissions-Policy': 'camera=(), geolocation=(), microphone=()',
+  'Permissions-Policy': "accelerometer=(), autoplay=(), bluetooth=(), browsing-topics=(), " +
+    "camera=(), display-capture=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), " +
+    "interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=(), " +
+    "xr-spatial-tracking=()",
   'Cross-Origin-Opener-Policy': 'same-origin',
   'X-Robots-Tag': 'noindex, nofollow'
 };
@@ -45,7 +49,7 @@ function enTetesPour(cheminRelatif) {
   if (/^icons\//.test(cheminRelatif)) {
     h['Cache-Control'] = 'public, max-age=31536000, immutable';
   } else {
-    h['Cache-Control'] = 'public, max-age=0, must-revalidate';
+    h['Cache-Control'] = 'no-cache';   // comme vercel.json : jamais de fichier obsolète
   }
   return h;
 }

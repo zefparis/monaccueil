@@ -313,10 +313,11 @@
     var frag = '';
     try { frag = location.hash || ''; } catch (e) { return false; }
     if (!frag || frag.indexOf('p=') === -1) { return false; }
-    lienPersonnelVu = true;
     var q;
     try { q = new URLSearchParams(frag.slice(1)); } catch (e) { return false; }
-    var b64 = q.get('p') || '';
+    var b64 = q.get('p');
+    if (b64 === null) { return false; }   // « p= » dans un autre mot (ex. « #top= »)
+    lienPersonnelVu = true;
     var force = q.get('force') === '1';
     // Nettoyage immédiat : rien ne doit rester visible dans la barre d'adresse
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file: */ }
@@ -367,14 +368,16 @@
     chargerPerso();
   }
 
-  /** Lien personnel « #p= » : la base courante + le fragment (jamais en query). */
+  /** Lien personnel « #p= » : la base courante (sans query ni fragment)
+      + le fragment. On ne reprend jamais ?url= d'un partage entrant ni un
+      autre fragment : le lien généré doit être propre et stable. */
   function genererLienPersonnel(avecPrenom) {
     var obj = sauvegardePersonne();
     delete obj.plustard;
     if (!avecPrenom) { delete obj.prenom; }
     var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    return location.href.split('#')[0] + '#p=' + b64;
+    return location.href.split('#')[0].split('?')[0] + '#p=' + b64;
   }
 
   function majusculeInitiale(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
@@ -1297,7 +1300,11 @@
   function demanderPin() {
     var d = $('dialog-pin');
     $('champ-pin').value = '';
-    $('pin-erreur').textContent = '';
+    // Config sans pinHash : aucun code ne sera jamais accepté — on le dit
+    // tout de suite au lieu de laisser le technicien chercher un code qui
+    // n'existe pas.
+    $('pin-erreur').textContent = config.pinHash ? ''
+      : 'Aucun code n\'est configuré (pinHash absent de la configuration).';
     ouvrirDialog(d);
     $('champ-pin').focus();
   }
@@ -1326,6 +1333,7 @@
     $('form-pin').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var saisie = $('champ-pin').value;
+      $('pin-erreur').textContent = '';   // efface l'erreur précédente pendant la vérification
       if (!/^[0-9]{4}$/.test(saisie)) { $('pin-erreur').textContent = 'Saisissez 4 chiffres.'; return; }
       verifierPin(saisie, function () {
         fermerDialog(d);
@@ -1568,7 +1576,11 @@
     $('btn-fermer-ajout').addEventListener('click', function () {
       fermerDialog(d);
       afficherZoneLibre(false);
-      if (persoActions) { persoActions.querySelector('#lien-ajout').focus(); }
+      if (persoLienAjout) { persoLienAjout.focus(); }
+    });
+    // Échap (cancel natif) : le focus revient aussi sur la tuile d'ajout
+    d.addEventListener('close', function () {
+      if (persoLienAjout && document.activeElement === document.body) { persoLienAjout.focus(); }
     });
   }
 
@@ -1602,6 +1614,11 @@
     $('btn-fermer-retrait').addEventListener('click', function () {
       fermerDialog($('dialog-retrait'));
       if (persoActions && tuilesPerso.length) { persoActions.querySelector('#lien-retrait').focus(); }
+    });
+    $('dialog-retrait').addEventListener('close', function () {
+      if (persoLienAjout && document.activeElement === document.body) {
+        (tuilesPerso.length && persoActions ? persoActions.querySelector('#lien-retrait') : persoLienAjout).focus();
+      }
     });
   }
 
@@ -1832,8 +1849,14 @@
     afficherMessagesTech(['Sauvegarde téléchargée : rangez ce config.json dans le dossier MonAccueil du client.'], 'confirmation');
   }
 
+  var CONFIG_IMPORT_MAX_OCTETS = 1024 * 1024;
+
   function importerConfig(fichier) {
     if (!fichier) { return; }
+    if (fichier.size > CONFIG_IMPORT_MAX_OCTETS) {
+      afficherMessagesTech(['Import refusé : fichier trop volumineux (une configuration fait quelques Ko).'], 'liste-erreurs');
+      return;
+    }
     var lecteur = new FileReader();
     lecteur.onload = function () {
       try {
@@ -2045,7 +2068,7 @@
     var quitter = el('button', { type: 'button', 'class': 'bouton bouton-principal', text: 'Quitter le mode technicien' });
     quitter.addEventListener('click', quitterModeTech);
     panneau.appendChild(el('div', { 'class': 'barre' }, [
-      el('h2', { id: 'tech-titre', text: 'Mode technicien' }), quitter
+      el('h1', { id: 'tech-titre', text: 'Mode technicien' }), quitter
     ]));
 
     // Zone de messages (erreurs, confirmations), commune aux deux onglets
@@ -2076,7 +2099,7 @@
     enregistrer.addEventListener('click', enregistrerBrouillon);
     var exporter = el('button', { type: 'button', 'class': 'bouton', text: 'Exporter la configuration' });
     exporter.addEventListener('click', exporterConfig);
-    var champImport = el('input', { type: 'file', id: 'tech-import', accept: '.json,.js,application/json,text/javascript', 'class': 'visuellement-cache' });
+    var champImport = el('input', { type: 'file', id: 'tech-import', accept: '.json,.js,application/json,text/javascript', 'class': 'visuellement-cache', 'aria-label': 'Choisir un fichier de configuration à importer' });
     champImport.addEventListener('change', function () { importerConfig(champImport.files[0]); champImport.value = ''; });
     var importer = el('button', { type: 'button', 'class': 'bouton', text: 'Importer une configuration' });
     importer.addEventListener('click', function () { champImport.click(); });
@@ -2087,7 +2110,7 @@
     p.appendChild(el('div', { 'class': 'barre' }, [enregistrer, exporter, importer, champImport, sauvegarde, reinit]));
 
     // Informations générales
-    p.appendChild(el('h3', { text: 'Informations générales' }));
+    p.appendChild(el('h2', { text: 'Informations générales' }));
     var general = el('div', { 'class': 'champs' });
     general.appendChild(el('label', { 'for': 'tech-prenom' }, ['Prénom de la personne (laissez vide : elle choisira elle-même)',
       el('input', { id: 'tech-prenom', name: 'prenom', type: 'text', value: brouillon.prenom, maxlength: '40', autocomplete: 'off' })]));
@@ -2154,7 +2177,7 @@
       el('label', { 'for': 'tech-ajout' }, ['La personne peut ajouter des boutons', selAjout])]));
 
     // Personnalisation locale de la personne (lecture seule) : couleurs et cases ajoutées
-    p.appendChild(el('h3', { text: 'Personnalisation de la personne' }));
+    p.appendChild(el('h2', { text: 'Personnalisation de la personne' }));
     var lignesPerso = [el('p', { 'class': 'discret', text: 'Couleurs choisies sur ce PC : ' + (paletteChoisie ? NOMS_PALETTES[paletteChoisie] : 'aucune (celles de la config)') + '.' })];
     if (tuilesPerso.length) {
       var ulPerso = el('ul');
@@ -2183,7 +2206,7 @@
 
     // Lien personnel : restaure prénom + couleurs + boutons via le fragment
     // d'URL (#p=…), jamais envoyé au serveur. À définir en page d'accueil.
-    p.appendChild(el('h3', { text: 'Lien personnel' }));
+    p.appendChild(el('h2', { text: 'Lien personnel' }));
     p.appendChild(el('p', { 'class': 'discret', text: 'Ce lien contient son prénom et ses boutons : rangez-le dans son dossier client, et ne le postez nulle part en public.' }));
     var casePrenomLien = el('input', { id: 'tech-lien-prenom', type: 'checkbox' });
     casePrenomLien.checked = true;
@@ -2207,7 +2230,7 @@
     p.appendChild(el('div', { 'class': 'lien-personnel' }, [btnGenerer, champLien, btnCopierLien]));
 
     // Diagnostic du stockage : état réel des deux moteurs de mémorisation
-    p.appendChild(el('h3', { text: 'Diagnostic du stockage' }));
+    p.appendChild(el('h2', { text: 'Diagnostic du stockage' }));
     var dl = el('dl', { 'class': 'diag-stockage' });
     function ligneDiag(nom, valeur) {
       dl.appendChild(el('dt', { text: nom }));
@@ -2237,7 +2260,7 @@
     p.appendChild(dl);
 
     // Aide à distance
-    p.appendChild(el('h3', { text: 'Aide à distance' }));
+    p.appendChild(el('h2', { text: 'Aide à distance' }));
     p.appendChild(el('p', { text: 'Le client vous appelle, lance le raccourci Bureau « Aide à distance » et accepte la connexion. Aucun accès caché ni permanent. Le raccourci lit ce réglage dans config.json : exportez après modification.' }));
     var distance = el('div', { 'class': 'champs' });
     var caseActif = el('input', { id: 'tech-distance-actif', name: 'distance-actif', type: 'checkbox' });
@@ -2255,7 +2278,7 @@
     p.appendChild(distance);
 
     // Code PIN
-    p.appendChild(el('h3', { text: 'Code PIN du mode technicien' }));
+    p.appendChild(el('h2', { text: 'Code PIN du mode technicien' }));
     var pinBarre = el('div', { 'class': 'barre' });
     pinBarre.appendChild(el('label', { 'for': 'tech-nouveau-pin' }, ['Nouveau code (4 chiffres)',
       el('input', { id: 'tech-nouveau-pin', type: 'password', inputmode: 'numeric', maxlength: '4', autocomplete: 'off' })]));
@@ -2265,7 +2288,7 @@
     p.appendChild(pinBarre);
 
     // Tuiles
-    p.appendChild(el('h3', { text: 'Tuiles (' + brouillon.tuiles.length + ')' }));
+    p.appendChild(el('h2', { text: 'Tuiles (' + brouillon.tuiles.length + ')' }));
     var conteneur = el('div');
     brouillon.tuiles.forEach(function (t, i) { conteneur.appendChild(creerCarteTuile(t, i, brouillon.tuiles.length)); });
     p.appendChild(conteneur);
@@ -2274,18 +2297,18 @@
     p.appendChild(el('div', { 'class': 'barre' }, [ajouter]));
 
     // Domaines officiels
-    p.appendChild(el('h3', { text: 'Domaines officiels connus' }));
+    p.appendChild(el('h2', { text: 'Domaines officiels connus' }));
     p.appendChild(el('p', { text: 'Un domaine par ligne. Une tuile dont l\'adresse n\'est pas dans cette liste déclenche un avertissement (mais reste autorisée).' }));
     p.appendChild(el('label', { 'for': 'tech-domaines' }, ['Liste des domaines',
       el('textarea', { id: 'tech-domaines', name: 'domaines', spellcheck: 'false' }, [brouillon.domainesOfficiels.join('\n')])]));
 
     // "Un message me paraît bizarre"
-    p.appendChild(el('h3', { text: 'Tuile « Un message me paraît bizarre »' }));
+    p.appendChild(el('h2', { text: 'Tuile « Un message me paraît bizarre »' }));
     var stats = lireStatistiques();
     p.appendChild(el('p', { text: 'Statistiques sur cet ordinateur (aucune adresse n\'est conservée) : ' + stats.verifications +
       ' vérification(s) d\'adresse, dont ' + stats.rouges + ' résultat(s) rouge(s), et ' + stats.refus +
       ' ajout(s) de bouton refusé(s) par le vérificateur. Elles sont jointes à l\'export dans la section « statistiques ».' }));
-    p.appendChild(el('h4', { text: 'Arnaques du moment (' + brouillon.arnaques.length + ')' }));
+    p.appendChild(el('h3', { text: 'Arnaques du moment (' + brouillon.arnaques.length + ')' }));
     p.appendChild(el('p', { text: 'Un titre et deux phrases maximum par arnaque, en langage simple. Mettez à jour la liste à chaque visite.' }));
     var conteneurArnaques = el('div');
     brouillon.arnaques.forEach(function (a, i) { conteneurArnaques.appendChild(creerCarteArnaque(a, i)); });
@@ -2293,13 +2316,13 @@
     var ajouterArn = el('button', { type: 'button', 'class': 'bouton', text: '+ Ajouter une arnaque' });
     ajouterArn.addEventListener('click', ajouterArnaque);
     p.appendChild(el('div', { 'class': 'barre' }, [ajouterArn]));
-    p.appendChild(el('h4', { text: 'Raccourcisseurs d\'adresses connus' }));
+    p.appendChild(el('h3', { text: 'Raccourcisseurs d\'adresses connus' }));
     p.appendChild(el('p', { text: 'Un domaine par ligne. Une adresse de ce type est toujours signalée en rouge : impossible de savoir où elle mène.' }));
     p.appendChild(el('label', { 'for': 'tech-raccourcisseurs' }, ['Liste des raccourcisseurs',
       el('textarea', { id: 'tech-raccourcisseurs', name: 'raccourcisseurs', spellcheck: 'false' }, [brouillon.raccourcisseurs.join('\n')])]));
 
     // Numéros utiles affichés dans la fenêtre d'aide (« Si je ne réponds pas »)
-    p.appendChild(el('h4', { text: 'Numéros utiles (« Si je ne réponds pas »)' }));
+    p.appendChild(el('h3', { text: 'Numéros utiles (« Si je ne réponds pas »)' }));
     p.appendChild(el('p', { text: 'Un numéro par ligne : « Nom | numéro | explication courte ». Exemple : Info Escroqueries | 0 805 805 817 | « Mon message est-il une arnaque ? »' }));
     p.appendChild(el('label', { 'for': 'tech-urgences' }, ['Liste des numéros',
       el('textarea', { id: 'tech-urgences', name: 'numeros-urgence', spellcheck: 'false' }, [numerosTexte(brouillon.numerosUrgence)])]));
@@ -2564,7 +2587,7 @@
 
     // Résumé
     var r = resumeJournal(journal);
-    pj.appendChild(el('h3', { text: 'Résumé' }));
+    pj.appendChild(el('h2', { text: 'Résumé' }));
     var resume = el('dl', { 'class': 'resume' });
     [['Interventions', String(r.nombre)], ['Temps total', formaterDuree(r.total)], ['Temps moyen', formaterDuree(r.moyenne)],
       ['Par motif', r.motifs], ['Par lieu', r.lieux]].forEach(function (x) {
@@ -2573,7 +2596,7 @@
     pj.appendChild(resume);
 
     // Formulaire d'ajout
-    pj.appendChild(el('h3', { text: 'Nouvelle intervention' }));
+    pj.appendChild(el('h2', { text: 'Nouvelle intervention' }));
     var champs = el('div', { 'class': 'champs' });
     champs.appendChild(el('label', { 'for': 'j-date' }, ['Date',
       el('input', { id: 'j-date', name: 'j-date', type: 'date', value: precedent.date, min: '2000-01-01', max: '2100-12-31', required: '' })]));
@@ -2589,14 +2612,14 @@
     ajouter.addEventListener('click', ajouterEntreeJournal);
     var exporter = el('button', { type: 'button', 'class': 'bouton', text: 'Exporter le journal (CSV)' });
     exporter.addEventListener('click', exporterJournal);
-    var champImport = el('input', { type: 'file', id: 'j-import', accept: '.csv,text/csv', 'class': 'visuellement-cache' });
+    var champImport = el('input', { type: 'file', id: 'j-import', accept: '.csv,text/csv', 'class': 'visuellement-cache', 'aria-label': 'Choisir un fichier CSV de journal à importer' });
     champImport.addEventListener('change', function () { importerJournal(champImport.files[0]); champImport.value = ''; });
     var importer = el('button', { type: 'button', 'class': 'bouton', text: 'Importer un journal (CSV)' });
     importer.addEventListener('click', function () { champImport.click(); });
     pj.appendChild(el('div', { 'class': 'barre' }, [ajouter, exporter, importer, champImport]));
 
     // Tableau
-    pj.appendChild(el('h3', { text: 'Interventions (' + journal.length + ')' }));
+    pj.appendChild(el('h2', { text: 'Interventions (' + journal.length + ')' }));
     if (!journal.length) {
       pj.appendChild(el('p', { text: 'Aucune intervention enregistrée pour le moment.' }));
       return;
@@ -2659,6 +2682,9 @@
         config = c;
         // Lien personnel « #p= » : hydrate le stockage vide (ou force=1), avant tout affichage
         if (traiterLienPersonnel()) { relireApresHydratation(); }
+        // Lien présent mais rien d'hydraté alors que le stockage est vide :
+        // le lien est probablement invalide ou tronqué — on le signale sobrement.
+        else if (lienPersonnelVu && stockageVide() && stockageOK) { afficherBandeauStockage(); }
         remplirLienTelephone($('appeler-stockage'));
         appliquerPalette(paletteEffective());   // la palette de la config s'applique si la personne n'a rien choisi
         afficherEntete();

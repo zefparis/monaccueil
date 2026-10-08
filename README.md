@@ -3,8 +3,11 @@
 Page d'accueil ultra simple pour personnes âgées : de gros boutons, chacun ouvre
 directement le **vrai** site officiel dans un nouvel onglet. Rien d'autre.
 
-- 100 % statique : aucun serveur, aucune dépendance, aucun appel réseau sortant,
-  aucun cookie, aucun compte, aucune donnée personnelle.
+- 100 % statique : aucun serveur, aucune dépendance, **aucun appel réseau vers
+  des serveurs tiers**, aucun cookie, aucun compte, aucune donnée personnelle.
+  Quand la page est hébergée en https, seules des requêtes **vers la même
+  origine** existent : lecture de `config.json` et cache hors ligne du service
+  worker. En `file://`, aucune requête du tout.
 - Fonctionne en double-clic sur `index.html` (`file://`) ou hébergé tel quel.
 - Installable (PWA) et consultable hors ligne quand elle est hébergée en https.
 
@@ -606,10 +609,13 @@ par `.vercelignore` : rien de tout cela n'est livré au site).
 ```bash
 python3 -m pip install -r tests/requirements-test.txt
 python3 -m playwright install chromium
+npm install           # dépendances de test uniquement (axe-core pour l'accessibilité)
 ```
 
-Node.js doit être présent (tests unitaires + serveur de test). Aucune
-dépendance n'est nécessaire à l'application elle-même.
+Node.js doit être présent (tests unitaires + serveur de test). Les paquets
+npm (`axe-core`) et `node_modules/` sont **exclus du déploiement** et ne
+servent qu'aux tests. Aucune dépendance n'est nécessaire à l'application
+elle-même.
 
 ### Lancer l'ensemble
 
@@ -640,7 +646,8 @@ contrôle échoue** — bloque avant commit.
 | `persistance` | double écriture localStorage ⇄ IndexedDB, lien `#p=` (force=1, hostiles), bandeau stockage, diagnostic |
 | `journal` | interventions, résumé, export/import CSV (BOM, neutralisation des formules, doublons) |
 | `verification` | verdicts vert/rouge/vide, raisons, statistiques, 68/68 catalogue vert |
-| `technicien` | appui long, PIN (refus, ralentissement), sauvegarde, quitter, `modeTechnicien:false` |
+| `technicien` | appui long, PIN (refus, ralentissement mesuré), sauvegarde, quitter, `modeTechnicien:false` |
+| `accessibilite` | axe-core sur tous les écrans et dialogs (normal, contraste, taille max, zoom 200 %, mobile), piège de focus, Échap, retour de focus |
 
 Chaque suite peut aussi se lancer seule : `python3 tests/suites/test_mobile.py`
 (le serveur doit tourner : `node tests/serveur.js`).

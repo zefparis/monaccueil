@@ -2,7 +2,7 @@
 panneau, onglets, sauvegarde config, quitter, modeTechnicien:false.
 ~16 contrôles.
 """
-import sys, os
+import sys, os, time
 sys.path.insert(0, os.path.dirname(__file__))
 from common import *
 
@@ -41,9 +41,19 @@ def run(S, b):
     pg.wait_for_timeout(2000)
     S.check('mauvais PIN : « Code incorrect »', 'incorrect' in (pg.text_content('#pin-erreur') or ''))
     S.check('mauvais PIN : panneau fermé', pg.locator('#panneau-tech:not([hidden])').count() == 0)
+    # Délai croissant : le 2e mauvais code doit répondre nettement plus tard
+    # que le 1er (1,5 s puis 3 s — on mesure jusqu'au retour du message).
+    pg.fill('#champ-pin', '8888')
+    t0 = time.time()
+    pg.click('#form-pin button[type="submit"]')
+    pg.wait_for_selector('#pin-erreur:not(:empty)', timeout=10000)
+    delai2 = time.time() - t0
+    S.check('mauvais PIN : délai croissant (%.1f s > 2 s)' % delai2, delai2 > 2.0)
     pg.fill('#champ-pin', 'abc')
     pg.click('#form-pin button[type="submit"]')
     pg.wait_for_timeout(300)
+    # La validation native (pattern="[0-9]{4}") bloque avant le JS : le dialog
+    # reste ouvert, sans message JS — comportement voulu (double barrière).
     S.check('PIN non numérique : bloqué par pattern HTML5 (dialog ouvert)',
             pg.locator('#dialog-pin[open]').count() == 1)
     pg.click('#btn-pin-annuler')
