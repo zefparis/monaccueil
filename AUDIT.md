@@ -85,6 +85,16 @@ correspond donc au site réellement visité.
 
 ## En-têtes et CSP
 
+`Access-Control-Allow-Origin` : Vercel ajoute `ACAO: *` par défaut sur tous les
+fichiers statiques. `vercel.json` le remplace par l'origine du site
+(`https://monaccueil.vercel.app`). **Vérifié en conditions réelles** sur le
+déploiement de prévisualisation (`vercel curl` + jeton de bypass) : `/`,
+`/index.html`, `/app.js`, `/config.json`, `/sw.js`, `/icons/impots.svg`
+renvoient tous `access-control-allow-origin: https://monaccueil.vercel.app`,
+même avec un `Origin` hostile — le `*` n'apparaît nulle part. Garde-fou dans
+`test_deploiement.py` (ACAO présent et ≠ `*`). Le serveur de test rejoue la
+même valeur.
+
 `vercel.json` et `tests/serveur.js` fournissent : CSP complète sans
 `unsafe-*` ni source externe (`default-src 'none'`, `script-src 'self'`,
 `style-src 'self'`, `img-src 'self'`, `frame-ancestors 'none'`,
