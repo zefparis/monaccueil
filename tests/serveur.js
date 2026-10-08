@@ -41,7 +41,10 @@ const SECURITE = {
     "interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=(), " +
     "xr-spatial-tracking=()",
   'Cross-Origin-Opener-Policy': 'same-origin',
-  'X-Robots-Tag': 'noindex, nofollow'
+  'X-Robots-Tag': 'noindex, nofollow',
+  // Vercel met 'Access-Control-Allow-Origin: *' par défaut sur les fichiers
+  // statiques : vercel.json le remplace par l'origine du site. Même chose ici.
+  'Access-Control-Allow-Origin': 'https://monaccueil.vercel.app'
 };
 
 function enTetesPour(cheminRelatif) {

@@ -37,6 +37,15 @@ for bloc in vc.get('headers', []):
         if h.get('key') == 'Content-Security-Policy':
             csp_entete = h.get('value', '')
 S.check('vercel.json : CSP présent', bool(csp_entete))
+# Vercel ajoute Access-Control-Allow-Origin: * aux fichiers statiques :
+# on impose une valeur explicite (l'origine du site), jamais '*'.
+acao = ''
+for bloc in vc.get('headers', []):
+    for h in bloc.get('headers', []):
+        if h.get('key', '').lower() == 'access-control-allow-origin':
+            acao = h.get('value', '')
+S.check('vercel.json : Access-Control-Allow-Origin explicite', bool(acao))
+S.check('vercel.json : ACAO n\'est pas « * »', acao != '*')
 if meta and csp_entete:
     meta_dirs = set(d.strip() for d in meta.group(1).split(';') if d.strip())
     hdr_dirs = set(d.strip() for d in csp_entete.split(';') if d.strip())

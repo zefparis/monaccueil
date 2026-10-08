@@ -20,7 +20,11 @@
           "value": "accelerometer=(), autoplay=(), bluetooth=(), browsing-topics=(), camera=(), display-capture=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=(), xr-spatial-tracking=()"
         },
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://monaccueil.vercel.app"
+        }
       ]
     },
     {
