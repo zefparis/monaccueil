@@ -228,6 +228,7 @@ body {
 }
 .retour-accueil[hidden] { display: none; }
 html.contraste-eleve .retour-accueil { border-color: #ffff00; }
+.retour-fc { display: block; margin-top: 0.4rem; font-weight: 700; }
 
 /* ---------- Boutons génériques ---------- */
 .bouton {
@@ -474,6 +475,8 @@ html.contraste-eleve .protection { background: #000; }
 .questions { margin: 0 0 0.5rem; padding-left: 1.8rem; font-size: 1.2rem; font-weight: 700; }
 .questions li { margin: 0.4rem 0; }
 .dialog-bizarre .protection { margin: 0.5rem 0 0; }
+/* Bloc « mail d'alerte de connexion » : texte en gros caractères */
+.dialog-bizarre .alerte-mail { font-size: var(--taille-texte); font-weight: 700; line-height: 1.4; margin: 0.5rem 0; }
 .dialog-bizarre label { display: block; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
 .ligne-verif { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: stretch; }
 .ligne-verif input {

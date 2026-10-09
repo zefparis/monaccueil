@@ -168,8 +168,16 @@ chaque client, sur sa machine et son navigateur :
 - [ ] Pendant ces tests, **aucun onglet ne s'ouvre**, rien ne se charge.
 - [ ] Montrer au client comment copier l'adresse d'un lien (clic droit → « Copier
       l'adresse du lien ») sans cliquer dessus.
-- [ ] Les 5 arnaques du moment s'affichent avec un titre et un texte court ; les mettre
-      à jour si besoin (mode technicien).
+- [ ] Les 6 arnaques du moment s'affichent avec un titre et un texte court
+      (dont « Faux mail d'alerte de connexion ») ; les mettre à jour si besoin
+      (mode technicien).
+- [ ] Le bloc « J'ai reçu un mail d'alerte de connexion » s'affiche en gros :
+      « ne cliquez sur rien », « aucun lien du mail », « Ne désactivez jamais
+      ces alertes », « Dernière vérification : [date] », bouton « Appeler
+      [votre nom] » avec lien `tel:`.
+- [ ] Ouvrir la tuile **FranceConnect** : le bandeau de retour ajoute « Vous
+      pouvez recevoir un mail de confirmation. S'il vous inquiète, appelez-moi
+      avant de cliquer. » (cette ligne n'apparaît pas pour les autres tuiles).
 - [ ] « Appeler [votre nom] » affiche bien votre nom ; le lien `tel:` contient votre
       numéro.
 - [ ] « Fermer » et **Échap** ferment la fenêtre ; à la réouverture, le champ et le

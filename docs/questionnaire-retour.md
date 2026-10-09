@@ -53,6 +53,8 @@ Personne : ____________________  Date de la visite : ____ / ____ / ______
 - A-t-elle reçu un message douteux depuis la visite ? ☐ oui ☐ non
   → si oui : qu'a-t-elle fait ? ____________________________________________
   → a-t-elle utilisé « Un message me paraît bizarre » ou le vérificateur ? ☐ oui ☐ non
+- A-t-elle reçu un mail d'alerte de connexion (FranceConnect) ? ☐ oui ☐ non
+  → si oui : qu'a-t-elle fait ? ☐ rien (normal si c'était elle) ☐ m'a appelé ☐ a cliqué — commentaire : _______
 - Elle sait toujours où est la fiche imprimée et le numéro : ☐ oui ☐ non
 - Sentiment de sécurité maintenant : ☐ 1 ☐ 2 ☐ 3 ☐ 4 ☐ 5
 - Ce qu'elle demande de changer : __________________________________________

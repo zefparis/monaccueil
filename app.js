@@ -864,15 +864,26 @@
   }
 
   /* Bandeau « comment revenir » après ouverture d'un site : disparaît au
-     retour sur l'accueil (focus/visibility) ou tout seul après un délai. */
+     retour sur l'accueil (focus/visibility) ou tout seul après un délai.
+     Pour FranceConnect uniquement, une ligne rappelle que le mail
+     « alerte de connexion » est normal (vérifié sur aide.franceconnect.gouv.fr). */
   var minuteurRetour = null;
-  function afficherRetour(type) {
+  function estFranceConnect(url) {
+    var a = analyserUrl(url);
+    return a.ok && /(^|\.)franceconnect\.gouv\.fr$/i.test(a.hote);
+  }
+  function afficherRetour(type, url) {
     var b = $('retour-accueil');
-    b.textContent = type === 'fenetre'
+    vider(b);
+    b.appendChild(el('span', { text: type === 'fenetre'
       ? 'Votre site s\'est ouvert sur la droite. Pour revenir ici : fermez-le avec la croix en haut à droite.'
       : type === 'mobile'
         ? 'Votre site s\'est ouvert. Pour revenir ici : touchez la flèche retour de votre téléphone, ou fermez l\'onglet.'
-        : 'Votre site s\'est ouvert dans un autre onglet. Pour revenir ici : fermez-le avec la croix de l\'onglet.';
+        : 'Votre site s\'est ouvert dans un autre onglet. Pour revenir ici : fermez-le avec la croix de l\'onglet.' }));
+    if (url && estFranceConnect(url)) {
+      b.appendChild(el('span', { 'class': 'retour-fc',
+        text: 'Vous pouvez recevoir un mail de confirmation. S\'il vous inquiète, appelez-moi avant de cliquer.' }));
+    }
     b.hidden = false;
     if (minuteurRetour) { clearTimeout(minuteurRetour); }
     minuteurRetour = setTimeout(masquerRetour, DELAI_BANDEAU_RETOUR);
@@ -915,12 +926,12 @@
         // ce qui laisse le téléphone ouvrir l'application officielle s'il le souhaite.
         if (estMobile()) {
           if (config.ouvertureMobile === 'memeOnglet') { ev.preventDefault(); location.href = t.url; return; }
-          afficherRetour('mobile');
+          afficherRetour('mobile', t.url);
           return;
         }
-        if (config.ouvertureSites === 'onglet') { afficherRetour('onglet'); return; }  // lien normal : target=_blank
-        if (ouvrirSite(t.url)) { ev.preventDefault(); afficherRetour('fenetre'); }
-        else { afficherRetour('onglet'); }  // bloqué ou écran étroit : le lien target=_blank fait le travail
+        if (config.ouvertureSites === 'onglet') { afficherRetour('onglet', t.url); return; }  // lien normal : target=_blank
+        if (ouvrirSite(t.url)) { ev.preventDefault(); afficherRetour('fenetre', t.url); }
+        else { afficherRetour('onglet', t.url); }  // bloqué ou écran étroit : le lien target=_blank fait le travail
       });
       return el('li', null, [lien]);
     }
@@ -1061,9 +1072,10 @@
       refus: lireCompteur(CLE_STAT_REFUS) };
   }
 
-  /** Remplit la liste des arnaques et le lien d'appel (à chaque changement de configuration). */
+  /** Remplit la liste des arnaques et les liens d'appel (à chaque changement de configuration). */
   function afficherBizarre() {
     remplirLienAppel($('bizarre-telephone'));
+    remplirLienAppel($('bizarre-alerte-telephone'));
     var ul = $('liste-arnaques');
     vider(ul);
     config.arnaques.forEach(function (a) {

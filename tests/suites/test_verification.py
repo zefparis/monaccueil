@@ -17,6 +17,16 @@ def run(S, b):
     S.check('3 questions affichées', pg.locator('#dialog-bizarre .questions li').count() == 3)
     S.check('conseils SMS/QR/banque', 'QR code' in (pg.text_content('#dialog-bizarre') or ''))
     S.check('arnaques du moment listées', pg.locator('#liste-arnaques li').count() >= 1)
+    # Bloc « mail d'alerte de connexion » (FranceConnect)
+    dlg = pg.text_content('#dialog-bizarre') or ''
+    S.check('bloc « mail d\'alerte de connexion »', 'alerte de connexion' in dlg)
+    S.check('alerte : « ne cliquez sur rien »', 'ne cliquez sur rien' in dlg)
+    S.check('alerte : « ne cliquez sur aucun lien »', 'aucun lien du mail' in dlg)
+    S.check('alerte : « Ne désactivez jamais »', 'Ne désactivez jamais' in dlg)
+    S.check('alerte : « Dernière vérification »', 'Dernière vérification' in dlg)
+    S.check('alerte : bouton « Appeler » dans le bloc',
+            (pg.get_attribute('#bizarre-alerte-telephone', 'href') or '').startswith('tel:')
+            and 'Benji' in (pg.text_content('#bizarre-alerte-telephone') or ''))
     S.check('champ adresse a le focus', pg.evaluate('() => document.activeElement.id') == 'champ-adresse')
     S.check('téléphone technicien en bas',
             (pg.get_attribute('#bizarre-telephone', 'href') or '').startswith('tel:'))

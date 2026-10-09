@@ -122,6 +122,10 @@
     {
       "titre": "Le faux support Microsoft ou le faux proche en difficulté",
       "texte": "Une alerte à l'écran ou un message WhatsApp d'un « enfant » avec un nouveau numéro réclame une action urgente ou de l'argent. Appelez le proche à son numéro habituel, ou appelez-moi."
+    },
+    {
+      "titre": "Faux mail d'alerte de connexion (FranceConnect, impôts, Ameli)",
+      "texte": "Un mail imite une alerte de connexion officielle pour voler vos identifiants. Ne cliquez aucun lien : ouvrez le vrai site depuis votre accueil et appelez-moi."
     }
   ],
   "tuiles": [

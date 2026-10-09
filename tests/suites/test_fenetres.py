@@ -55,6 +55,22 @@ def run(S, b):
     S.check('bandeau retour « fenêtre » affiché',
             pg.locator('#retour-accueil:not([hidden])').count() == 1
             and 'croix en haut à droite' in (pg.text_content('#retour-accueil') or ''))
+    S.check('bandeau sans rappel FranceConnect (tuile Ameli)',
+            pg.locator('#retour-accueil .retour-fc').count() == 0)
+    ctx.close()
+
+    # --- Tuile FranceConnect : rappel « mail de confirmation » dans le bandeau ---
+    ctx, pg, errs_fc = nouvelle_page(b)
+    tuiles_fc = config_test()['tuiles'] + [
+        {'id': 'franceconnect', 'label': 'FranceConnect',
+         'url': 'https://franceconnect.gouv.fr', 'couleur': '#034263',
+         'icone': 'administration.svg', 'groupe': 'Mes démarches'}]
+    injecter_config(pg, tuiles=tuiles_fc)
+    with ctx.expect_page() as pw_fc:
+        pg.locator('.tuile[href*="franceconnect"]').click()
+    pw_fc.value.close()
+    S.check('FranceConnect : rappel mail affiché',
+            'mail de confirmation' in (pg.text_content('#retour-accueil .retour-fc') or ''))
     ctx.close()
 
     # --- Option « onglet » : clic = lien natif target=_blank ---
@@ -127,7 +143,7 @@ def run(S, b):
     ctx.close()
 
     S.check('aucune erreur console cumulée',
-            len(errs) + len(errs2) + len(errs3) + len(errs4) + len(errs5) + len(errs6) + len(errs7) == 0)
+            len(errs) + len(errs2) + len(errs3) + len(errs4) + len(errs5) + len(errs6) + len(errs7) + len(errs_fc) == 0)
 
 
 if __name__ == '__main__':

@@ -428,7 +428,7 @@ téléphone dans l'application :
 ## 6. Tuile « Un message me paraît bizarre »
 
 Tuile fixe (orange foncé, icône bouclier), toujours présente. Elle n'ouvre aucun site :
-un clic affiche une grande fenêtre en 4 blocs, utilisable au clavier (Tab, Entrée, Échap).
+un clic affiche une grande fenêtre en 5 blocs, utilisable au clavier (Tab, Entrée, Échap).
 
 1. **Posez-vous 3 questions** : argent / code / mot de passe ? pression ? inattendu ?
    « Si la réponse est oui à UNE seule question : ne cliquez pas, ne répondez pas,
@@ -462,8 +462,17 @@ un clic affiche une grande fenêtre en 4 blocs, utilisable au clavier (Tab, Entr
      (SÛR / DANGER), jamais porté par la couleur seule.
    Le champ et le résultat sont effacés à la fermeture (bouton ou Échap).
 3. **Les arnaques du moment** : liste `arnaques` de la configuration, à mettre à jour
-   à chaque visite depuis le mode technicien (titre + 2 phrases max).
-4. **Appeler [technicien]** (lien `tel:`) et **Fermer**.
+   à chaque visite depuis le mode technicien (titre + 2 phrases max). Elle comprend
+   le **faux mail d'alerte de connexion** (FranceConnect, impôts, Ameli).
+4. **J'ai reçu un mail d'alerte de connexion** : rappel en gros caractères — si la
+   démarche vient d'être faite, ne cliquer sur rien ; sinon, ne cliquer aucun lien
+   du mail, ouvrir FranceConnect depuis l'accueil, regarder le tableau de bord et
+   appeler le technicien. **Ne jamais désactiver ces alertes.** Vérifié le 9 octobre
+   2026 sur aide.franceconnect.gouv.fr (alerte mail en cas de connexion inhabituelle,
+   historique consultable sur le tableau de bord FranceConnect). Bouton
+   « Appeler [technicien] » à côté. Au retour de la tuile **FranceConnect**, le
+   bandeau de retour ajoute : « Vous pouvez recevoir un mail de confirmation. »
+5. **Appeler [technicien]** (lien `tel:`) et **Fermer**.
 
 **Compteurs** : seuls deux nombres sont mémorisés dans le navigateur (`try/catch`) :
 nombre de vérifications et nombre de résultats rouges. **Aucune adresse saisie n'est
