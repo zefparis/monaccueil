@@ -55,22 +55,100 @@ def run(S, b):
     S.check('bandeau retour « fenêtre » affiché',
             pg.locator('#retour-accueil:not([hidden])').count() == 1
             and 'croix en haut à droite' in (pg.text_content('#retour-accueil') or ''))
-    S.check('bandeau sans rappel FranceConnect (tuile Ameli)',
-            pg.locator('#retour-accueil .retour-fc').count() == 0)
+    S.check('bandeau : rappel FranceConnect (ameli.fr est dans la liste)',
+            'mail de confirmation' in (pg.text_content('#retour-accueil .retour-fc') or ''))
     ctx.close()
 
-    # --- Tuile FranceConnect : rappel « mail de confirmation » dans le bandeau ---
+    # --- Rappel « mail FranceConnect » : liste configurable sitesFranceConnect ---
     ctx, pg, errs_fc = nouvelle_page(b)
     tuiles_fc = config_test()['tuiles'] + [
         {'id': 'franceconnect', 'label': 'FranceConnect',
          'url': 'https://franceconnect.gouv.fr', 'couleur': '#034263',
-         'icone': 'administration.svg', 'groupe': 'Mes démarches'}]
+         'icone': 'administration.svg', 'groupe': 'Mes démarches'},
+        {'id': 'meteo', 'label': 'Météo', 'url': 'https://meteofrance.com',
+         'couleur': '#0369a1', 'icone': 'meteo.svg', 'groupe': 'Mon quotidien'}]
     injecter_config(pg, tuiles=tuiles_fc)
-    with ctx.expect_page() as pw_fc:
-        pg.locator('.tuile[href*="franceconnect"]').click()
-    pw_fc.value.close()
-    S.check('FranceConnect : rappel mail affiché',
-            'mail de confirmation' in (pg.text_content('#retour-accueil .retour-fc') or ''))
+    # Chaque domaine de la liste par défaut affiche le rappel
+    for sel, nom in [('.tuile[href*="franceconnect"]', 'franceconnect'),
+                     ('.tuile[href*="impots"]', 'impots'),
+                     ('.tuile[href*="ameli"]', 'ameli')]:
+        with ctx.expect_page() as pw_fc:
+            pg.locator(sel).click()
+        pw_fc.value.close()
+        S.check('rappel mail : tuile %s' % nom,
+                'mail de confirmation' in (pg.text_content('#retour-accueil .retour-fc') or ''))
+        S.check('rappel mail : « quelques minutes plus tard » (%s)' % nom,
+                'quelques minutes plus tard' in (pg.text_content('#retour-accueil .retour-fc') or ''))
+    # Tuile hors liste : pas de rappel
+    with ctx.expect_page() as pw_m:
+        pg.locator('.tuile[href*="meteofrance"]').click()
+    pw_m.value.close()
+    S.check('rappel mail : absent pour meteofrance.com',
+            pg.locator('#retour-accueil .retour-fc').count() == 0)
+    ctx.close()
+
+    # Sous-domaine réel accepté, domaine trompeur refusé, tuile ajoutée par la
+    # personne (perso) fonctionne par domaine — même règle que le vérificateur
+    ctx, pg, errs_fc2 = nouvelle_page(b)
+    injecter_config(pg, tuiles=[
+        {'id': 'sous', 'label': 'Sous-domaine', 'url': 'https://cfspart.impots.gouv.fr',
+         'couleur': '#2f6fbf', 'icone': 'impots.svg', 'groupe': 'Mes démarches'},
+        {'id': 'piege', 'label': 'Trompeur', 'url': 'https://franceconnect.gouv.fr.autre.com',
+         'couleur': '#2f6fbf', 'icone': 'impots.svg', 'groupe': 'Mes démarches'}])
+    with ctx.expect_page() as pw_s:
+        pg.locator('.tuile[href*="cfspart.impots"]').click()
+    pw_s.value.close()
+    S.check('rappel mail : sous-domaine réel accepté',
+            pg.locator('#retour-accueil .retour-fc').count() == 1)
+    with ctx.expect_page() as pw_p:
+        pg.locator('.tuile[href*="autre.com"]').click()
+    pw_p.value.close()
+    S.check('rappel mail : domaine trompeur refusé',
+            pg.locator('#retour-accueil .retour-fc').count() == 0)
+    ctx.close()
+
+    # Liste invalide à l'import → repli sur la liste par défaut
+    ctx, pg, errs_fc3 = nouvelle_page(b)
+    injecter_config(pg, sitesFranceConnect=['<script>', 'pas un domaine', 42],
+                    tuiles=[{'id': 'ameli', 'label': 'Ameli', 'url': 'https://www.ameli.fr',
+                             'couleur': '#2e8b57', 'icone': 'sante.svg', 'groupe': 'Ma santé'}])
+    with ctx.expect_page() as pw_i:
+        pg.locator('.tuile[href*="ameli"]').click()
+    pw_i.value.close()
+    S.check('rappel mail : liste invalide → défaut utilisé',
+            pg.locator('#retour-accueil .retour-fc').count() == 1)
+    ctx.close()
+
+    # Tuile ajoutée par la personne : le rappel dépend du domaine aussi
+    ctx, pg, errs_fc5 = nouvelle_page(b)
+    injecter_config(pg, tuiles=[
+        {'id': 'meteo', 'label': 'Météo', 'url': 'https://meteofrance.com',
+         'couleur': '#0369a1', 'icone': 'meteo.svg', 'groupe': 'Mon quotidien'}])
+    pg.evaluate("""() => localStorage.setItem('monaccueil.perso',
+      JSON.stringify([{label: 'Ma Caf', url: 'https://www.caf.fr', icone: 'famille.svg'}]))""")
+    charger(pg); fermer_prenom(pg)
+    with ctx.expect_page() as pw_perso:
+        pg.locator('.tuile[href*="caf.fr"]').click()
+    pw_perso.value.close()
+    S.check('rappel mail : tuile ajoutée par la personne (caf.fr)',
+            pg.locator('#retour-accueil .retour-fc').count() == 1)
+    ctx.close()
+
+    # Liste personnalisée : seuls les domaines choisis affichent le rappel
+    ctx, pg, errs_fc4 = nouvelle_page(b)
+    injecter_config(pg, sitesFranceConnect=['ameli.fr'],
+                    tuiles=[{'id': 'ameli', 'label': 'Ameli', 'url': 'https://www.ameli.fr',
+                             'couleur': '#2e8b57', 'icone': 'sante.svg', 'groupe': 'Ma santé'},
+                            {'id': 'impots', 'label': 'Impôts', 'url': 'https://www.impots.gouv.fr',
+                             'couleur': '#2f6fbf', 'icone': 'impots.svg', 'groupe': 'Mes démarches'}])
+    with ctx.expect_page() as pw_a:
+        pg.locator('.tuile[href*="ameli"]').click()
+    pw_a.value.close()
+    S.check('rappel mail : liste perso (ameli oui)', pg.locator('#retour-accueil .retour-fc').count() == 1)
+    with ctx.expect_page() as pw_i2:
+        pg.locator('.tuile[href*="impots"]').click()
+    pw_i2.value.close()
+    S.check('rappel mail : liste perso (impots non)', pg.locator('#retour-accueil .retour-fc').count() == 0)
     ctx.close()
 
     # --- Option « onglet » : clic = lien natif target=_blank ---
@@ -143,7 +221,8 @@ def run(S, b):
     ctx.close()
 
     S.check('aucune erreur console cumulée',
-            len(errs) + len(errs2) + len(errs3) + len(errs4) + len(errs5) + len(errs6) + len(errs7) + len(errs_fc) == 0)
+            len(errs) + len(errs2) + len(errs3) + len(errs4) + len(errs5) + len(errs6) + len(errs7)
+            + len(errs_fc) + len(errs_fc2) + len(errs_fc3) + len(errs_fc4) + len(errs_fc5) == 0)
 
 
 if __name__ == '__main__':

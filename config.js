@@ -110,6 +110,14 @@ window.MONACCUEIL_CONFIG = {
       "texte": "Un mail imite une alerte de connexion officielle pour voler vos identifiants. Ne cliquez aucun lien : ouvrez le vrai site depuis votre accueil et appelez-moi."
     }
   ],
+  "sitesFranceConnect": [
+    "franceconnect.gouv.fr",
+    "impots.gouv.fr",
+    "ameli.fr",
+    "caf.fr",
+    "lassuranceretraite.fr",
+    "service-public.fr"
+  ],
   "tuiles": [
     {
       "id": "impots",

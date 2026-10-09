@@ -175,9 +175,11 @@ chaque client, sur sa machine et son navigateur :
       « ne cliquez sur rien », « aucun lien du mail », « Ne désactivez jamais
       ces alertes », « Dernière vérification : [date] », bouton « Appeler
       [votre nom] » avec lien `tel:`.
-- [ ] Ouvrir la tuile **FranceConnect** : le bandeau de retour ajoute « Vous
-      pouvez recevoir un mail de confirmation. S'il vous inquiète, appelez-moi
-      avant de cliquer. » (cette ligne n'apparaît pas pour les autres tuiles).
+- [ ] Ouvrir une tuile qui passe par FranceConnect (**Impôts**, **Ameli**,
+      **Retraite**, **Caf**, **Service-public**, **FranceConnect** — liste
+      `sitesFranceConnect`) : le bandeau de retour ajoute « Vous pouvez
+      recevoir un mail de confirmation. … Il peut arriver quelques minutes
+      plus tard. » Cette ligne n'apparaît **pas** pour Météo ni Courrier.
 - [ ] « Appeler [votre nom] » affiche bien votre nom ; le lien `tel:` contient votre
       numéro.
 - [ ] « Fermer » et **Échap** ferment la fenêtre ; à la réouverture, le champ et le

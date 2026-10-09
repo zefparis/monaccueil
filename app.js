@@ -56,6 +56,13 @@
   var CLE_INSTALL_IOS = 'monaccueil.install-ios.ferme';
   var CLE_PROTECTION = 'monaccueil.protection';   // étapes « Protéger mon téléphone » cochées (JSON)
   var CLE_ALERTE_VUE = 'monaccueil.alerte.vue';   // hash de l'alerte fermée : revient si le texte change
+  /* Sites qui peuvent déclencher un mail « Alerte de connexion » de
+     FranceConnect : connexion via n'importe quel service utilisant
+     FranceConnect (impôts, Ameli, Retraite…), pas seulement la tuile
+     FranceConnect. Liste modifiable par le technicien ; correspondance
+     stricte par suffixe « .domaine » (même règle que le vérificateur). */
+  var SITES_FC_DEFAUT = ['franceconnect.gouv.fr', 'impots.gouv.fr', 'ameli.fr',
+    'caf.fr', 'lassuranceretraite.fr', 'service-public.fr'];
 
   // Prénom : lettres (accents compris), espaces, tiret, apostrophe ; commence par une lettre ; 30 max
   var REGEX_PRENOM = /^[\p{L}][\p{L} '\-]*$/u;
@@ -613,6 +620,13 @@
       // Catalogue des services proposés : null = celui de catalogue.js embarqué
       catalogue: normaliserCatalogue(c.catalogue),
       domainesOfficiels: listeDomaines(Array.isArray(c.domainesOfficiels) ? c.domainesOfficiels : []),
+      // Sites déclenchant une alerte mail FranceConnect : repli sur la liste
+      // par défaut si la clé est absente, vide ou entièrement invalide
+      sitesFranceConnect: (function () {
+        var l = listeDomaines(Array.isArray(c.sitesFranceConnect) ? c.sitesFranceConnect
+          : (Array.isArray(defaut.sitesFranceConnect) ? defaut.sitesFranceConnect : SITES_FC_DEFAUT));
+        return l.length ? l : SITES_FC_DEFAUT.slice();
+      })(),
       raccourcisseurs: listeDomaines(Array.isArray(c.raccourcisseurs) ? c.raccourcisseurs : (Array.isArray(defaut.raccourcisseurs) ? defaut.raccourcisseurs : [])),
       arnaques: listeArnaques(Array.isArray(c.arnaques) ? c.arnaques : (Array.isArray(defaut.arnaques) ? defaut.arnaques : [])),
       tuiles: (Array.isArray(c.tuiles) ? c.tuiles : []).filter(function (t) { return t && typeof t === 'object'; }).map(function (t, i) {
@@ -865,12 +879,13 @@
 
   /* Bandeau « comment revenir » après ouverture d'un site : disparaît au
      retour sur l'accueil (focus/visibility) ou tout seul après un délai.
-     Pour FranceConnect uniquement, une ligne rappelle que le mail
-     « alerte de connexion » est normal (vérifié sur aide.franceconnect.gouv.fr). */
+     Pour les sites passant par FranceConnect (liste configurable
+     « sitesFranceConnect »), une ligne rappelle que le mail « alerte de
+     connexion » est normal (vérifié sur aide.franceconnect.gouv.fr). */
   var minuteurRetour = null;
-  function estFranceConnect(url) {
+  function estSiteFranceConnect(url) {
     var a = analyserUrl(url);
-    return a.ok && /(^|\.)franceconnect\.gouv\.fr$/i.test(a.hote);
+    return a.ok && domaineOfficiel(a.hote, config.sitesFranceConnect);
   }
   function afficherRetour(type, url) {
     var b = $('retour-accueil');
@@ -880,9 +895,9 @@
       : type === 'mobile'
         ? 'Votre site s\'est ouvert. Pour revenir ici : touchez la flèche retour de votre téléphone, ou fermez l\'onglet.'
         : 'Votre site s\'est ouvert dans un autre onglet. Pour revenir ici : fermez-le avec la croix de l\'onglet.' }));
-    if (url && estFranceConnect(url)) {
+    if (url && estSiteFranceConnect(url)) {
       b.appendChild(el('span', { 'class': 'retour-fc',
-        text: 'Vous pouvez recevoir un mail de confirmation. S\'il vous inquiète, appelez-moi avant de cliquer.' }));
+        text: 'Vous pouvez recevoir un mail de confirmation. S\'il vous inquiète, appelez-moi avant de cliquer. Il peut arriver quelques minutes plus tard.' }));
     }
     b.hidden = false;
     if (minuteurRetour) { clearTimeout(minuteurRetour); }
@@ -2292,6 +2307,7 @@
     brouillon.contactsConfiance = lireContactsTexte(p.querySelector('[name="contacts-confiance"]').value);
     brouillon.domainesOfficiels = lireListeTexte(p.querySelector('[name="domaines"]').value);
     brouillon.raccourcisseurs = lireListeTexte(p.querySelector('[name="raccourcisseurs"]').value);
+    brouillon.sitesFranceConnect = lireListeTexte(p.querySelector('[name="sites-fc"]').value);
     brouillon.numerosUrgence = lireNumerosTexte(p.querySelector('[name="numeros-urgence"]').value);
     brouillon.arnaques = Array.prototype.map.call(p.querySelectorAll('.carte-arnaque'), function (carte) {
       return { titre: carte.querySelector('[name="arnaque-titre"]').value.trim(), texte: carte.querySelector('[name="arnaque-texte"]').value.trim() };
@@ -2329,7 +2345,8 @@
     if (brouillon.aideDistance.actif && brouillon.aideDistance.outil === 'rustdesk' && !brouillon.aideDistance.idRustdesk) {
       avertissements.push('Aide à distance : l\'identifiant RustDesk du poste est vide (facultatif, mais pratique pour vous).');
     }
-    [['Domaines officiels', brouillon.domainesOfficiels], ['Raccourcisseurs', brouillon.raccourcisseurs]].forEach(function (x) {
+    [['Domaines officiels', brouillon.domainesOfficiels], ['Raccourcisseurs', brouillon.raccourcisseurs],
+     ['Sites FranceConnect', brouillon.sitesFranceConnect]].forEach(function (x) {
       x[1].forEach(function (d) {
         if (!domaineValide(d)) { erreurs.push(x[0] + ' : « ' + d + ' » n\'est pas un nom de domaine valide (sans http://, sans chemin).'); }
       });
@@ -2961,6 +2978,10 @@
     p.appendChild(el('p', { text: 'Un domaine par ligne. Une adresse de ce type est toujours signalée en rouge : impossible de savoir où elle mène.' }));
     p.appendChild(el('label', { 'for': 'tech-raccourcisseurs' }, ['Liste des raccourcisseurs',
       el('textarea', { id: 'tech-raccourcisseurs', name: 'raccourcisseurs', spellcheck: 'false' }, [brouillon.raccourcisseurs.join('\n')])]));
+    p.appendChild(el('h3', { text: 'Sites avec mail « alerte de connexion »' }));
+    p.appendChild(el('p', { text: 'Un domaine par ligne (les sous-domaines comptent). Après avoir ouvert l\'un de ces sites, le bandeau de retour prévient la personne qu\'un mail FranceConnect peut arriver.' }));
+    p.appendChild(el('label', { 'for': 'tech-sites-fc' }, ['Liste des sites FranceConnect',
+      el('textarea', { id: 'tech-sites-fc', name: 'sites-fc', spellcheck: 'false' }, [brouillon.sitesFranceConnect.join('\n')])]));
 
     // Numéros utiles affichés dans la fenêtre d'aide (« Si je ne réponds pas »)
     p.appendChild(el('h3', { text: 'Numéros utiles (« Si je ne réponds pas »)' }));

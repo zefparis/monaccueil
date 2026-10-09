@@ -211,6 +211,13 @@ Deux méthodes : à la main dans `config.json`, ou via le mode technicien (§ 4)
   caractères" }`. Bandeau sobre en haut de l'accueil, fermable ; il revient si
   le texte change (le navigateur compare un haché du contenu, clé
   `monaccueil.alerte.vue`). Texte brut uniquement : aucune balise.
+- `sitesFranceConnect` : domaines dont la connexion peut déclencher un mail
+  « Alerte de connexion » FranceConnect (défaut : franceconnect.gouv.fr,
+  impots.gouv.fr, ameli.fr, caf.fr, lassuranceretraite.fr, service-public.fr).
+  Après avoir ouvert l'un d'eux, le bandeau de retour ajoute le rappel « mail
+  de confirmation ». Même schéma strict que `domainesOfficiels` (suffixe
+  « .domaine »), éditable en mode technicien, liste invalide à l'import →
+  repli sur la liste par défaut.
 - `statistiques` : section ajoutée par l'export (§ 6), ignorée à l'import.
 
 Si `raccourcisseurs` ou `arnaques` manquent (configuration d'un ancien client), les
@@ -470,8 +477,12 @@ un clic affiche une grande fenêtre en 5 blocs, utilisable au clavier (Tab, Entr
    appeler le technicien. **Ne jamais désactiver ces alertes.** Vérifié le 9 octobre
    2026 sur aide.franceconnect.gouv.fr (alerte mail en cas de connexion inhabituelle,
    historique consultable sur le tableau de bord FranceConnect). Bouton
-   « Appeler [technicien] » à côté. Au retour de la tuile **FranceConnect**, le
-   bandeau de retour ajoute : « Vous pouvez recevoir un mail de confirmation. »
+   « Appeler [technicien] » à côté. Au retour de toute tuile passant par
+   FranceConnect (liste `sitesFranceConnect` : FranceConnect, impôts, Ameli,
+   Caf, Retraite, service-public par défaut), le bandeau de retour ajoute :
+   « Vous pouvez recevoir un mail de confirmation. Il peut arriver quelques
+   minutes plus tard. » — l'alerte arrive aussi après une connexion via un
+   service partenaire (ex. impots.gouv.fr depuis la tuile Retraite).
 5. **Appeler [technicien]** (lien `tel:`) et **Fermer**.
 
 **Compteurs** : seuls deux nombres sont mémorisés dans le navigateur (`try/catch`) :
